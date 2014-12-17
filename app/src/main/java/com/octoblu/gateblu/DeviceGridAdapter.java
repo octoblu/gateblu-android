@@ -1,6 +1,7 @@
 package com.octoblu.gateblu;
 
 import android.content.Context;
+import android.location.GpsStatus;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,18 +38,42 @@ public class DeviceGridAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        Device device = getItem(position);
+        final Device device = getItem(position);
 
-        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View view = inflater.inflate(R.layout.device_grid_item, parent, false);
+        final ViewHolder viewHolder;
 
-        TextView textView = (TextView) view.findViewById(R.id.device_grid_item_name);
-        textView.setText(device.getName());
+        if(convertView == null){
+            viewHolder = new ViewHolder();
+
+            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            convertView = inflater.inflate(R.layout.device_grid_item, parent, false);
+            viewHolder.name  = (TextView) convertView.findViewById(R.id.device_grid_item_name);
+            viewHolder.image = (ImageView) convertView.findViewById(R.id.device_grid_item_image);
+
+            convertView.setTag(viewHolder);
+        } else {
+            viewHolder = (ViewHolder) convertView.getTag();
+        }
+
 
         int imageID = context.getResources().getIdentifier(device.getImageName(), "drawable",  context.getPackageName());
-        ImageView imageView = (ImageView) view.findViewById(R.id.device_grid_item_image);
-        imageView.setImageResource(imageID);
 
-        return view;
+        viewHolder.name.setText(device.getName());
+        viewHolder.image.setImageResource(imageID);
+        viewHolder.image.setAlpha(device.isOnline() ? 1.0f : 0.5f);
+
+        device.setOnOnlineChangedListener(new Device.OnlineChangedListener(){
+            @Override
+            public void onOnlineChanged(){
+                viewHolder.image.setAlpha(device.isOnline() ? 1.0f : 0.5f);
+            }
+        });
+
+        return convertView;
+    }
+
+    private static class ViewHolder {
+        TextView name;
+        ImageView image;
     }
 }
