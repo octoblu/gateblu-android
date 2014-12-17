@@ -45,7 +45,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         plugin = (CordovaWebView)findViewById(R.id.deviceManager);
         plugin.loadUrl("file:///android_asset/www/gateblu.html");
 
-        Intent serviceIntent = new Intent(this, GatebluService.class);
+        Intent serviceIntent = new Intent(this, NobleService.class);
         startService(serviceIntent);
     }
 
