@@ -30,6 +30,10 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
+        java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
+
         setContentView(R.layout.activity_gateblu);
         addDevices();
 
@@ -41,6 +45,8 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         plugin = (CordovaWebView)findViewById(R.id.deviceManager);
         plugin.loadUrl("file:///android_asset/www/gateblu.html");
 
+        Intent serviceIntent = new Intent(this, GatebluService.class);
+        startService(serviceIntent);
     }
 
     @Override
@@ -53,7 +59,6 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        plugin.postMessage("message", "hi");
         Device device = deviceGridAdapter.getItem(position);
         device.toggle();
     }

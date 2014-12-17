@@ -22,6 +22,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.0'
+    compile 'org.java-websocket:Java-WebSocket:1.3.0'
     compile files('/home/redaphid/Projects/Octoblu/gateblu-android/libs/cordova-3.6.4.jar')
     compile files('/Users/roy/Projects/Octoblu/gateblu-android/libs/cordova-3.6.4.jar')
 }

@@ -1,14 +1,14 @@
 <html>
     <head>
-        <script>
-            document.write('hey');
-            function receiveMessage(event) {
-                document.write('got an event');
-                document.write(JSON.stringify(event, null, 2));
-            }
-            window.addEventListener("message", receiveMessage, false);
-        </script>
+        <script src="http://gateblu.s3.amazonaws.com/javascript/meshblu-bean.js"></script>
     </head>
+    <script>
+        var bean = new Plugin.Plugin();
+        setTimeout(function(){
+            .setOptions({ localName: 'BeanyBaby' });
+        },bean 1000);
+
+    </script>
     <body>
         <h1>HELLO!!!!!</h1>
     </body>
