@@ -1,7 +1,6 @@
 package com.octoblu.gateblu;
 
 import android.content.Context;
-import android.location.GpsStatus;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;

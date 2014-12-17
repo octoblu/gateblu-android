@@ -1,7 +1,7 @@
 package com.octoblu.gateblu;
 
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -60,23 +60,9 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
 
     private void addDevices() {
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
-        devices.add(new Device("Blink(1)", "device:blink1"));
-        devices.add(new Device("Hue", "device:hue"));
+        for(int i = 0; i < 20; i++) {
+            devices.add(new Device("Blink(1)", "device:blink1"));
+            devices.add(new Device("Hue", "device:hue"));
+        }
     }
 }
