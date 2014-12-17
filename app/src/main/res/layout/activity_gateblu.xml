@@ -12,5 +12,8 @@
         android:columnWidth="90dp"
         android:numColumns="auto_fit">
         </GridView>
-
+    <org.apache.cordova.CordovaWebView
+        android:id="@+id/deviceManager"
+        android:layout_width="0px"
+        android:layout_height="0px" />
 </RelativeLayout>
