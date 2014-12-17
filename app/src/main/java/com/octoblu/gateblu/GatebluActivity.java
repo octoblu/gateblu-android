@@ -50,5 +50,21 @@ public class GatebluActivity extends ActionBarActivity {
     private void addDevices() {
         devices.add(new Device("Blink(1)", "device:blink1"));
         devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
+        devices.add(new Device("Blink(1)", "device:blink1"));
+        devices.add(new Device("Hue", "device:hue"));
     }
 }

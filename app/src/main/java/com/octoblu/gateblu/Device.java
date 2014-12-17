@@ -16,4 +16,9 @@ public class Device {
     public String getType() {
         return type;
     }
+
+    public String getImageName() {
+        String[] parts = getType().split(":");
+        return parts[parts.length - 1];
+    }
 }
