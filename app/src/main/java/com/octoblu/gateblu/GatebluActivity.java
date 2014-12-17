@@ -4,14 +4,17 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.GridView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class GatebluActivity extends ActionBarActivity {
+public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
 
     private final List<Device> devices = new ArrayList<>();
+    private DeviceGridAdapter deviceGridAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -19,10 +22,10 @@ public class GatebluActivity extends ActionBarActivity {
         setContentView(R.layout.activity_gateblu);
         addDevices();
 
-        DeviceGridAdapter adapter = new DeviceGridAdapter(getApplicationContext(), devices);
-
+        deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), devices);
         GridView gridView = (GridView)findViewById(R.id.devices_grid);
-        gridView.setAdapter(adapter);
+        gridView.setAdapter(deviceGridAdapter);
+        gridView.setOnItemClickListener(this);
     }
 
     @Override
@@ -30,6 +33,13 @@ public class GatebluActivity extends ActionBarActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_gateblu, menu);
         return true;
+    }
+
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Device device = deviceGridAdapter.getItem(position);
+        device.toggle();
     }
 
     @Override
@@ -46,6 +56,8 @@ public class GatebluActivity extends ActionBarActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+
 
     private void addDevices() {
         devices.add(new Device("Blink(1)", "device:blink1"));
