@@ -11,6 +11,7 @@ import android.widget.GridView;
 
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,7 @@ public class DeviceManagerActivity extends ActionBarActivity implements CordovaI
 
     private final List<Device> devices = new ArrayList<>();
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
-
+    private CordovaWebView plugin;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +32,8 @@ public class DeviceManagerActivity extends ActionBarActivity implements CordovaI
         DeviceGridAdapter adapter = new DeviceGridAdapter(getApplicationContext(), devices);
 
         GridView gridView = (GridView)findViewById(R.id.devices_grid);
+        plugin = (CordovaWebView)findViewById(R.id.deviceManager);
+        plugin.loadUrl("file:///android_asset/www/gateblu.html");
         gridView.setAdapter(adapter);
     }
 
@@ -43,6 +46,7 @@ public class DeviceManagerActivity extends ActionBarActivity implements CordovaI
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        plugin.postMessage("message", "hi");
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.

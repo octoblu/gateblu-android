@@ -1,19 +1,30 @@
 package com.octoblu.gateblu;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
+public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener, CordovaInterface {
 
     private final List<Device> devices = new ArrayList<>();
+    private final ExecutorService threadPool = Executors.newCachedThreadPool();
+    private CordovaWebView plugin;
     private DeviceGridAdapter deviceGridAdapter;
 
     @Override
@@ -26,6 +37,10 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         GridView gridView = (GridView)findViewById(R.id.devices_grid);
         gridView.setAdapter(deviceGridAdapter);
         gridView.setOnItemClickListener(this);
+
+        plugin = (CordovaWebView)findViewById(R.id.deviceManager);
+        plugin.loadUrl("file:///android_asset/www/gateblu.html");
+
     }
 
     @Override
@@ -38,6 +53,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        plugin.postMessage("message", "hi");
         Device device = deviceGridAdapter.getItem(position);
         device.toggle();
     }
@@ -65,4 +81,31 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             devices.add(new Device("Hue", "device:hue"));
         }
     }
+
+    @Override
+    public void startActivityForResult(CordovaPlugin cordovaPlugin, Intent intent, int i) {
+        //I don't know what this is!
+    }
+
+    @Override
+    public void setActivityResultCallback(CordovaPlugin cordovaPlugin) {
+
+    }
+
+    @Override
+    public Activity getActivity() {
+        return this;
+    }
+
+    @Override
+    public Object onMessage(String s, Object o) {
+        Log.i("DeviceManager", s);
+        return null;
+    }
+
+    @Override
+    public ExecutorService getThreadPool() {
+        return threadPool;
+    }
+
 }

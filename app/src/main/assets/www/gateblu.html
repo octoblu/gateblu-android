@@ -1,0 +1,15 @@
+<html>
+    <head>
+        <script>
+            document.write('hey');
+            function receiveMessage(event) {
+                document.write('got an event');
+                document.write(JSON.stringify(event, null, 2));
+            }
+            window.addEventListener("message", receiveMessage, false);
+        </script>
+    </head>
+    <body>
+        <h1>HELLO!!!!!</h1>
+    </body>
+</html>
