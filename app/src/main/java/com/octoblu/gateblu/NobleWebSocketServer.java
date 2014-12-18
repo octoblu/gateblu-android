@@ -1,6 +1,9 @@
 package com.octoblu.gateblu;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattService;
+import android.os.Parcel;
+import android.os.ParcelUuid;
 import android.util.JsonReader;
 import android.util.Log;
 
@@ -20,19 +23,19 @@ import java.util.UUID;
  * Created by redaphid on 12/17/14.
  */
 public class NobleWebSocketServer extends WebSocketServer {
-
+    private final static String TAG = "gateblu:NobleWebSocketServer";
     private List<OnScanListener> onScanListeners = null;
     private List<WebSocket> connections = new ArrayList<>();
 
     public NobleWebSocketServer(InetSocketAddress address) {
         super(address);
-        Log.d("GatebluWebsocket", "Instantiated Server");
+        Log.d(TAG, "Instantiated Server");
         onScanListeners = new ArrayList<OnScanListener>();
     }
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
-        Log.d("GatebluWebsocket", "something connected!");
+        Log.d(TAG, "something connected!");
         connections.add(conn);
     }
 
@@ -43,11 +46,11 @@ public class NobleWebSocketServer extends WebSocketServer {
 
     @Override
     public void onMessage(WebSocket conn, String message) {
-        Log.d("GatebluWebsocket", message);
+        Log.d(TAG, message);
         try {
             processMessage(message, connections.indexOf(conn));
         } catch (JSONException e) {
-            Log.d("GatebluWebsocket", "something bad happened related to json parsing");
+            Log.d(TAG, "something bad happened related to json parsing");
             e.printStackTrace();
             conn.send("bad json!");
         }
@@ -93,27 +96,39 @@ public class NobleWebSocketServer extends WebSocketServer {
         onScanListeners.add(onScanListener);
     }
 
-    public void sendDiscoveredDevice(BluetoothDevice device, int connId) {
+    public void sendDiscoveredDevice(BluetoothDevice device, int rssi, int connId) {
         WebSocket conn = connections.get(connId);
         if(conn == null) {
             return;
         }
-        JSONObject message = createDiscoverMessage(device);
-        Log.d("GatebluWebsocket", "sending message: " + message.toString());
+        JSONObject message = createDiscoverMessage(device, rssi);
+        Log.d(TAG, "sending message: " + message.toString());
         conn.send(message.toString());
     }
 
-    private JSONObject createDiscoverMessage(BluetoothDevice device) {
-        JSONObject message;
-
+    private JSONObject createDiscoverMessage(BluetoothDevice device, int rssi) {
         try {
-            message = new JSONObject();
-            message.put("action", "discover");
+            JSONArray serviceUuids = new JSONArray();
+            if(device.getUuids() != null) {
+                for (ParcelUuid uuid : device.getUuids()) {
+                    serviceUuids.put(uuid.getUuid().toString());
+                }
+            }
+
+            JSONObject advertisement = new JSONObject();
+            advertisement.put("localName", device.getName());
+            advertisement.put("txtPowerLevel", 9001);
+            advertisement.put("serviceUuids", serviceUuids);
+
+            JSONObject message = new JSONObject();
+            message.put("type", "discover");
+            message.put("peripheralUuid", device.getAddress());
+            message.put("rssi", rssi);
+            message.put("advertisement", advertisement);
+            return message;
         } catch (JSONException e) {
             return null;
         }
-
-        return message;
     }
 
     public static abstract class OnScanListener{

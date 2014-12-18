@@ -47,7 +47,7 @@ public class NobleService extends IntentService {
                 adapter.startLeScan(uuids, new BluetoothAdapter.LeScanCallback() {
                     @Override
                     public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-                        webSocketServer.sendDiscoveredDevice(device, connId);
+                        webSocketServer.sendDiscoveredDevice(device, rssi, connId);
                     }
                 });
 
