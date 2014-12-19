@@ -31,6 +31,7 @@ public class NobleWebSocketServer extends WebSocketServer {
     private List<DiscoverServicesListener> discoverServicesListeners = new ArrayList<>();
     private List<WebSocket> connections = new ArrayList<>();
     private List<DiscoverCharacteristicsListener> discoverCharacteristicsListeners = new ArrayList<>();
+    private List<WriteListener> writeListeners = new ArrayList<>();
 
     public NobleWebSocketServer(InetSocketAddress address) {
         super(address);
@@ -79,6 +80,9 @@ public class NobleWebSocketServer extends WebSocketServer {
             case "discoverCharacteristics":
                 discoverCharacteristics(connIndex, jsonObject);
                 break;
+            case "write":
+                write(connIndex, jsonObject);
+                break;
             default:
                 Log.w(TAG, "I can't even '" + action + "'");
         }
@@ -112,6 +116,17 @@ public class NobleWebSocketServer extends WebSocketServer {
 
         for(DiscoverCharacteristicsListener listener : discoverCharacteristicsListeners) {
             listener.onDiscoverCharacteristics(connIndex, peripheralUuid, serviceUuid, characteristicUuids);
+        }
+    }
+
+    public void write(int connIndex, JSONObject jsonObject) throws JSONException {
+        String peripheralUuid = jsonObject.getString("peripheralUuid");
+        String serviceUuid = jsonObject.getString("serviceUuid");
+        String characteristicUuid = jsonObject.getString("characteristicUuid");
+        String data = jsonObject.getString("data");
+
+        for(WriteListener listener: writeListeners) {
+            listener.write(connIndex, peripheralUuid, serviceUuid, characteristicUuid, data);
         }
     }
 
@@ -205,7 +220,7 @@ public class NobleWebSocketServer extends WebSocketServer {
             for(BluetoothGattCharacteristic characteristic : characteristics) {
                 JSONArray properties = new JSONArray();
                 for(BluetoothGattDescriptor descriptor : characteristic.getDescriptors()){
-                    properties.put(descriptor.getValue());
+                    properties.put(descriptor.toString());
                 }
 
                 JSONObject jsonCharacteristic = new JSONObject();
@@ -265,6 +280,10 @@ public class NobleWebSocketServer extends WebSocketServer {
         this.discoverCharacteristicsListeners.add(listener);
     }
 
+    public void setWriteListener(WriteListener listener) {
+        this.writeListeners.add(listener);
+    }
+
     private List<String> parseJSONStringArrayOfUuids(JSONObject jsonObject, String key) throws JSONException {
         JSONArray jsonArray = jsonObject.getJSONArray(key);
         List<String> stringList = new ArrayList<>(jsonArray.length());
@@ -299,5 +318,9 @@ public class NobleWebSocketServer extends WebSocketServer {
     public static abstract class DiscoverCharacteristicsListener {
         public abstract void onDiscoverCharacteristics(int connIndex, String peripheralUuid, String serviceUuid, List<String> characteristicUuids);
 
+    }
+
+    public static abstract class WriteListener {
+        public abstract void write(int connIndex, String peripheralUuid, String serviceUuid, String characteristicUuid, String data);
     }
 }

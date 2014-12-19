@@ -33,6 +33,7 @@ public class NobleService extends IntentService {
     public static final String TAG = "GatebluService";
     private NobleWebSocketServer webSocketServer;
     private Map<String, ScanResult> scanResultMap = new HashMap<>();
+    private Map<String, BluetoothGatt> gattMap = new HashMap<>();
     private Map<Integer, BluetoothLeScanner> scannerMap = new HashMap<>();
 
     public NobleService() {
@@ -129,11 +130,21 @@ public class NobleService extends IntentService {
                         BluetoothGattService service = gatt.getService(UUID.fromString(serviceUuid));
                         List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
 
-
                         webSocketServer.sendDiscoveredCharacteristics(connIndex, deviceAddress, serviceUuid, characteristics);
                     }
                 });
                 gatt.discoverServices();
+                gattMap.put(deviceAddress, gatt);
+            }
+        });
+
+        webSocketServer.setWriteListener(new NobleWebSocketServer.WriteListener() {
+            @Override
+            public void write(int connIndex, String deviceAddress, String serviceUuid, String characteristicUuid, String data) {
+                BluetoothGatt gatt = gattMap.get(deviceAddress);
+                BluetoothGattCharacteristic characteristic = gatt.getService(UUID.fromString(serviceUuid)).getCharacteristic(UUID.fromString(characteristicUuid));
+                characteristic.setValue(hexStringToByteArray(data));
+                gatt.writeCharacteristic(characteristic);
             }
         });
 
@@ -143,5 +154,15 @@ public class NobleService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
 
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 }
