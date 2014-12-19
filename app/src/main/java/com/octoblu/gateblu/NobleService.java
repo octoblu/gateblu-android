@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
@@ -20,17 +21,16 @@ import android.widget.Toast;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- * Created by redaphid on 12/17/14.
- */
 public class NobleService extends IntentService {
     public static final String TAG = "GatebluService";
+    protected static final UUID CHARACTERISTIC_UPDATE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+
     private NobleWebSocketServer webSocketServer;
     private Map<String, ScanResult> scanResultMap = new HashMap<>();
     private Map<String, BluetoothGatt> gattMap = new HashMap<>();
@@ -50,7 +50,6 @@ public class NobleService extends IntentService {
         webSocketServer.setOnScanListener(new NobleWebSocketServer.OnScanListener() {
             @Override
             public void onScanListener(List<String> uuids, final int connId) {
-                Log.w(TAG, "Some uuids: " + uuids);
                 BluetoothAdapter adapter = bluetoothManager.getAdapter();
 
                 if (adapter == null || !adapter.isEnabled()) {
@@ -60,7 +59,7 @@ public class NobleService extends IntentService {
                 }
                 BluetoothLeScanner bluetoothLeScanner = adapter.getBluetoothLeScanner();
 
-                List<ScanFilter> scanFilters = new CopyOnWriteArrayList<ScanFilter>();
+                List<ScanFilter> scanFilters = new ArrayList<>();
                 for(String uuid : uuids){
                     scanFilters.add(new ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(uuid)).build());
                 }
@@ -69,6 +68,7 @@ public class NobleService extends IntentService {
                     @Override
                     public void onScanResult(int callbackType, ScanResult result) {
                         super.onScanResult(callbackType, result);
+                        Log.w(TAG, "Scanned a thing!: " + result.getDevice().getName());
                         scanResultMap.put(result.getDevice().getAddress(), result);
                         webSocketServer.sendDiscoveredDevice(result, connId);
                     }
@@ -93,9 +93,59 @@ public class NobleService extends IntentService {
 
         webSocketServer.setConnectListener(new NobleWebSocketServer.ConnectListener(){
             @Override
-            public void onConnect(int connIndex, String deviceAddress) {
+            public void onConnect(final int connIndex, final String deviceAddress) {
                 ScanResult scanResult = scanResultMap.get(deviceAddress);
+                BluetoothGatt gatt = scanResult.getDevice().connectGatt(getApplicationContext(), true, new BluetoothGattCallback() {
+                    @Override
+                    public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                        super.onConnectionStateChange(gatt, status, newState);
+                        Log.i(TAG, "onConnectionStateChange");
+                        webSocketServer.sendConnectedToDevice(connIndex, deviceAddress);
+                    }
 
+                    @Override
+                    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                        super.onServicesDiscovered(gatt, status);
+
+                        for(BluetoothGattService service : gatt.getServices()) {
+                            List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
+
+                            webSocketServer.sendDiscoveredCharacteristics(connIndex, deviceAddress, service.getUuid().toString(), characteristics);
+                        }
+                    }
+
+                    @Override
+                    public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                        super.onCharacteristicChanged(gatt, characteristic);
+                        Log.d(TAG, "onCharacteristicChanged");
+
+                        String serviceUuid = characteristic.getService().getUuid().toString();
+                        String characteristicUuid = characteristic.getUuid().toString();
+                        String data = bytesToHex(characteristic.getValue());
+
+                        webSocketServer.sendRead(connIndex, deviceAddress, serviceUuid, characteristicUuid, data);
+                    }
+
+                    @Override
+                    public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                        super.onCharacteristicRead(gatt, characteristic, status);
+
+                        Log.d(TAG, "onCharacteristicRead: success: " + (BluetoothGatt.GATT_SUCCESS == status));
+
+                        String serviceUuid = characteristic.getService().getUuid().toString();
+                        String characteristicUuid = characteristic.getUuid().toString();
+                        String data = bytesToHex(characteristic.getValue());
+
+                        webSocketServer.sendRead(connIndex, deviceAddress, serviceUuid, characteristicUuid, data);
+                    }
+
+                    @Override
+                    public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+                        super.onCharacteristicWrite(gatt, characteristic, status);
+                        Log.d(TAG, "onCharacteristicWrite");
+                    }
+                });
+                gattMap.put(deviceAddress, gatt);
             }
         });
 
@@ -117,24 +167,8 @@ public class NobleService extends IntentService {
             @Override
             public void onDiscoverCharacteristics(final int connIndex, final String deviceAddress, final String serviceUuid, List<String> characteristicUuids) {
                 ScanResult scanResult = scanResultMap.get(deviceAddress);
-                BluetoothGatt gatt = scanResult.getDevice().connectGatt(getApplicationContext(), true, new BluetoothGattCallback() {
-                    @Override
-                    public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                        super.onConnectionStateChange(gatt, status, newState);
-                        gatt.discoverServices();
-                    }
-
-                    @Override
-                    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                        super.onServicesDiscovered(gatt, status);
-                        BluetoothGattService service = gatt.getService(UUID.fromString(serviceUuid));
-                        List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
-
-                        webSocketServer.sendDiscoveredCharacteristics(connIndex, deviceAddress, serviceUuid, characteristics);
-                    }
-                });
+                BluetoothGatt gatt = gattMap.get(deviceAddress);
                 gatt.discoverServices();
-                gattMap.put(deviceAddress, gatt);
             }
         });
 
@@ -148,12 +182,26 @@ public class NobleService extends IntentService {
             }
         });
 
+        webSocketServer.setNotifyListener(new NobleWebSocketServer.NotifyListener(){
+            @Override
+            public void notifyDevice(int connIndex, String deviceAddress, String serviceUuid, String characteristicUuid, boolean setNotify) {
+                BluetoothGatt gatt = gattMap.get(deviceAddress);
+                BluetoothGattCharacteristic characteristic = gatt.getService(UUID.fromString(serviceUuid)).getCharacteristic(UUID.fromString(characteristicUuid));
+                gatt.setCharacteristicNotification(characteristic, setNotify);
+
+                BluetoothGattDescriptor descriptor = characteristic.getDescriptor(CHARACTERISTIC_UPDATE_NOTIFICATION_DESCRIPTOR_UUID);
+                descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                gatt.writeDescriptor(descriptor);
+
+                webSocketServer.sendNotify(connIndex, deviceAddress, serviceUuid, characteristicUuid, setNotify);
+            }
+        });
+
         webSocketServer.start();
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
-
     }
 
     public static byte[] hexStringToByteArray(String s) {
@@ -164,5 +212,14 @@ public class NobleService extends IntentService {
                     + Character.digit(s.charAt(i+1), 16));
         }
         return data;
+    }
+
+    final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex(byte[] bytes) {
+        Formatter formatter = new Formatter();
+        for (byte b : bytes) {
+            formatter.format("%02x", b);
+        }
+        return formatter.toString();
     }
 }

@@ -8,23 +8,21 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.GridView;
-
-import org.apache.cordova.CordovaInterface;
-import org.apache.cordova.CordovaPlugin;
-import org.apache.cordova.CordovaWebView;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener, CordovaInterface {
+public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
 
     private final List<Device> devices = new ArrayList<>();
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
-    private CordovaWebView plugin;
+    private WebView plugin;
     private DeviceGridAdapter deviceGridAdapter;
 
     @Override
@@ -42,7 +40,11 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         gridView.setAdapter(deviceGridAdapter);
         gridView.setOnItemClickListener(this);
 
-        plugin = (CordovaWebView)findViewById(R.id.deviceManager);
+        plugin = (WebView)findViewById(R.id.deviceManager);
+        WebSettings settings = plugin.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
         plugin.loadUrl("file:///android_asset/www/gateblu.html");
 
         Intent serviceIntent = new Intent(this, NobleService.class);
@@ -65,12 +67,8 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -78,39 +76,10 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         return super.onOptionsItemSelected(item);
     }
 
-
-
     private void addDevices() {
         for(int i = 0; i < 20; i++) {
             devices.add(new Device("Blink(1)", "device:blink1"));
             devices.add(new Device("Hue", "device:hue"));
         }
     }
-
-    @Override
-    public void startActivityForResult(CordovaPlugin cordovaPlugin, Intent intent, int i) {
-        //I don't know what this is!
-    }
-
-    @Override
-    public void setActivityResultCallback(CordovaPlugin cordovaPlugin) {
-
-    }
-
-    @Override
-    public Activity getActivity() {
-        return this;
-    }
-
-    @Override
-    public Object onMessage(String s, Object o) {
-        Log.i("DeviceManager", s);
-        return null;
-    }
-
-    @Override
-    public ExecutorService getThreadPool() {
-        return threadPool;
-    }
-
 }
