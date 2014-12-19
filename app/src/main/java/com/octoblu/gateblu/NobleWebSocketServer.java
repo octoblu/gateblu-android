@@ -1,10 +1,9 @@
 package com.octoblu.gateblu;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattService;
-import android.os.Parcel;
+import android.bluetooth.le.ScanRecord;
+import android.bluetooth.le.ScanResult;
 import android.os.ParcelUuid;
-import android.util.JsonReader;
 import android.util.Log;
 
 import org.java_websocket.WebSocket;
@@ -17,20 +16,23 @@ import org.json.JSONObject;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by redaphid on 12/17/14.
  */
 public class NobleWebSocketServer extends WebSocketServer {
     private final static String TAG = "gateblu:NobleWebSocketServer";
-    private List<OnScanListener> onScanListeners = null;
+    private List<OnScanListener> onScanListeners = new ArrayList<>();
+    private List<OnStopScanListener> onStopScanListeners = new ArrayList<>();
+    private List<ConnectListener> connectListeners = new ArrayList<>();
+    private List<DiscoverServicesListener> discoverServicesListeners = new ArrayList<>();
     private List<WebSocket> connections = new ArrayList<>();
+    private List<DiscoverCharacteristicsListener> discoverCharacteristicsListeners = new ArrayList<>();
 
     public NobleWebSocketServer(InetSocketAddress address) {
         super(address);
         Log.d(TAG, "Instantiated Server");
-        onScanListeners = new ArrayList<OnScanListener>();
     }
 
     @Override
@@ -46,45 +48,89 @@ public class NobleWebSocketServer extends WebSocketServer {
 
     @Override
     public void onMessage(WebSocket conn, String message) {
-        Log.d(TAG, message);
+        Log.d(TAG, "onMessage: " + message);
         try {
-            processMessage(message, connections.indexOf(conn));
+            routeMessage(connections.indexOf(conn), message);
         } catch (JSONException e) {
-            Log.d(TAG, "something bad happened related to json parsing");
-            e.printStackTrace();
-            conn.send("bad json!");
+            Log.e(TAG, "something bad happened related to json parsing", e);
         }
     }
 
-    private void processMessage(String message, int connIndex) throws JSONException {
+    private void routeMessage(int connIndex, String message) throws JSONException {
         JSONObject jsonObject;
         jsonObject = new JSONObject(message);
         String action = jsonObject.getString("action");
 
-        if("startScanning".equals(action)) {
-            startScanning(jsonObject, connIndex);
+        switch(action){
+            case "startScanning":
+                startScanning(connIndex, jsonObject);
+                break;
+            case "stopScanning":
+                stopScanning(connIndex);
+                break;
+            case "connect":
+                connect(connIndex, jsonObject);
+                break;
+            case "discoverServices":
+                discoverServices(connIndex, jsonObject);
+                break;
+            case "discoverCharacteristics":
+                discoverCharacteristics(connIndex, jsonObject);
+                break;
+            default:
+                Log.w(TAG, "I can't even '" + action + "'");
         }
     }
 
-    private void startScanning(JSONObject jsonObject, int connIndex) throws JSONException {
-        JSONArray jsonUUIDs = jsonObject.getJSONArray("serviceUuids");
-        UUID[] uuids = new UUID[jsonUUIDs.length()];
 
-        for(int i = 0; i < jsonUUIDs.length(); i++){
-            uuids[i] = toUUID(jsonUUIDs.getString(i));
 
+    private void connect(int connIndex, JSONObject jsonObject) throws JSONException {
+        String peripheralUuid = jsonObject.getString("peripheralUuid");
+
+        for(ConnectListener listener : connectListeners){
+            listener.onConnect(connIndex, peripheralUuid);
         }
+
+        sendConnectedToDevice(connIndex, peripheralUuid);
+    }
+
+    private void discoverServices(int connIndex, JSONObject jsonObject) throws JSONException {
+        String peripheralUuid = jsonObject.getString("peripheralUuid");
+        List<String> uuids = parseJSONStringArrayOfUuids(jsonObject, "uuids");
+
+        for(DiscoverServicesListener listener : discoverServicesListeners){
+            listener.onDiscoverServices(connIndex, peripheralUuid, uuids);
+        }
+    }
+
+    private void discoverCharacteristics(int connIndex, JSONObject jsonObject) throws JSONException {
+        String peripheralUuid = jsonObject.getString("peripheralUuid");
+        List<String> characteristicUuids = parseJSONStringArrayOfUuids(jsonObject, "characteristicUuids");
+
+        for(DiscoverCharacteristicsListener listener : discoverCharacteristicsListeners) {
+            listener.onDiscoverCharacteristics(connIndex, peripheralUuid, characteristicUuids);
+        }
+    }
+
+    private void startScanning(int connIndex, JSONObject jsonObject) throws JSONException {
+        List<String> uuids = parseJSONStringArrayOfUuids(jsonObject, "serviceUuids");
 
         for(OnScanListener scanListener : onScanListeners) {
             scanListener.onScanListener(uuids, connIndex);
         }
     }
 
-    private UUID toUUID(String digits) {
+    private void stopScanning(int connIndex) {
+        for(OnStopScanListener stopScanListener : onStopScanListeners){
+            stopScanListener.onStopScanListener(connIndex);
+        }
+    }
+
+    private String derosenthal(String digits) {
         String uuid = digits.replaceAll(
                 "(\\w{8})(\\w{4})(\\w{4})(\\w{4})(\\w{12})",
                 "$1-$2-$3-$4-$5");
-        return UUID.fromString(uuid);
+        return uuid;
     }
 
     @Override
@@ -96,28 +142,68 @@ public class NobleWebSocketServer extends WebSocketServer {
         onScanListeners.add(onScanListener);
     }
 
-    public void sendDiscoveredDevice(BluetoothDevice device, int rssi, int connId) {
+    public void setOnStopScanListener(OnStopScanListener onStopScanListener) {
+        onStopScanListeners.add(onStopScanListener);
+    }
+
+    private void sendConnectedToDevice(int connId, String peripheralUuid) throws JSONException {
         WebSocket conn = connections.get(connId);
-        if(conn == null) {
+        if(conn == null || !conn.isOpen()) {
             return;
         }
-        JSONObject message = createDiscoverMessage(device, rssi);
+
+        JSONObject message = new JSONObject();
+        message.put("type", "connect");
+        message.put("peripheralUuid", peripheralUuid);
+        conn.send(message.toString());
+    }
+
+    public void sendDiscoveredDevice(ScanResult result, int connId) {
+        WebSocket conn = connections.get(connId);
+        if(conn == null || !conn.isOpen()) {
+            return;
+        }
+        JSONObject message = createDiscoverMessage(result, result.getRssi());
         Log.d(TAG, "sending message: " + message.toString());
         conn.send(message.toString());
     }
 
-    private JSONObject createDiscoverMessage(BluetoothDevice device, int rssi) {
+    public void sendDiscoveredServices(int connId, String peripheralUuid, List<String> discoveredUuids) {
+        WebSocket conn = connections.get(connId);
+        if(conn == null || !conn.isOpen()) {
+            return;
+        }
+
         try {
             JSONArray serviceUuids = new JSONArray();
-            if(device.getUuids() != null) {
-                for (ParcelUuid uuid : device.getUuids()) {
-                    serviceUuids.put(uuid.getUuid().toString());
-                }
+            for(String uuid : discoveredUuids) {
+                serviceUuids.put(uuid);
+            }
+
+            JSONObject message = new JSONObject();
+            message.put("type", "servicesDiscover");
+            message.put("peripheralUuid", peripheralUuid);
+            message.put("serviceUuids", serviceUuids);
+            Log.d(TAG, "sending this: " + message.toString());
+            conn.send(message.toString());
+        } catch (JSONException e) {
+            Log.e(TAG, "Something really terrible just happened. ", e);
+        }
+    }
+
+    private JSONObject createDiscoverMessage(ScanResult scanResult, int rssi) {
+        try {
+            BluetoothDevice device = scanResult.getDevice();
+            ScanRecord scanRecord = scanResult.getScanRecord(); //.getServiceUuids()
+            JSONArray serviceUuids = new JSONArray();
+
+            for (ParcelUuid uuid : scanRecord.getServiceUuids()) {
+                serviceUuids.put(uuid.getUuid().toString());
             }
 
             JSONObject advertisement = new JSONObject();
             advertisement.put("localName", device.getName());
-            advertisement.put("txtPowerLevel", 9001);
+            advertisement.put("txtPowerLevel", scanResult.getScanRecord().getTxPowerLevel());
             advertisement.put("serviceUuids", serviceUuids);
 
             JSONObject message = new JSONObject();
@@ -131,9 +217,50 @@ public class NobleWebSocketServer extends WebSocketServer {
         }
     }
 
-    public static abstract class OnScanListener{
-        public abstract void onScanListener(UUID[] uuids, int connId);
+    public void setConnectListener(ConnectListener connectListener) {
+        this.connectListeners.add(connectListener);
+    }
+
+    public void setDiscoverServicesListener(DiscoverServicesListener listener) {
+        this.discoverServicesListeners.add(listener);
+    }
+
+    public void setDiscoverCharacteristicsListener(DiscoverCharacteristicsListener listener) {
+        this.discoverCharacteristicsListeners.add(listener);
+    }
+
+    private List<String> parseJSONStringArrayOfUuids(JSONObject jsonObject, String key) throws JSONException {
+        JSONArray jsonArray = jsonObject.getJSONArray(key);
+        List<String> stringList = new ArrayList<>(jsonArray.length());
+
+        for(int i = 0; i < jsonArray.length(); i++){
+            stringList.add(derosenthal(jsonArray.getString(i)));
+        }
+
+        return stringList;
     }
 
 
+
+    public static abstract class OnScanListener{
+        public abstract void onScanListener(List<String> uuids, int connId);
+    }
+
+
+    public static abstract class OnStopScanListener {
+        public abstract void onStopScanListener(int connIndex);
+    }
+
+    public static abstract class ConnectListener {
+        public abstract void onConnect(int connIndex, String deviceAddress);
+    }
+
+    public static abstract class DiscoverServicesListener {
+        public abstract void onDiscoverServices(int connIndex, String deviceAddress, List<String> uuids);
+    }
+
+    public static abstract class DiscoverCharacteristicsListener {
+        public abstract void onDiscoverCharacteristics(int connIndex, String peripheralUuid, List<String> characteristicUuids);
+
+    }
 }
