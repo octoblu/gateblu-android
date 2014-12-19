@@ -1,6 +1,8 @@
 package com.octoblu.gateblu;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.os.ParcelUuid;
@@ -105,10 +107,11 @@ public class NobleWebSocketServer extends WebSocketServer {
 
     private void discoverCharacteristics(int connIndex, JSONObject jsonObject) throws JSONException {
         String peripheralUuid = jsonObject.getString("peripheralUuid");
+        String serviceUuid = jsonObject.getString("serviceUuid");
         List<String> characteristicUuids = parseJSONStringArrayOfUuids(jsonObject, "characteristicUuids");
 
         for(DiscoverCharacteristicsListener listener : discoverCharacteristicsListeners) {
-            listener.onDiscoverCharacteristics(connIndex, peripheralUuid, characteristicUuids);
+            listener.onDiscoverCharacteristics(connIndex, peripheralUuid, serviceUuid, characteristicUuids);
         }
     }
 
@@ -191,6 +194,39 @@ public class NobleWebSocketServer extends WebSocketServer {
         }
     }
 
+    public void sendDiscoveredCharacteristics(int connId, String peripheralUuid, String serviceUuid, List<BluetoothGattCharacteristic> characteristics) {
+        WebSocket conn = connections.get(connId);
+        if(conn == null || !conn.isOpen()) {
+            return;
+        }
+
+        try {
+            JSONArray characteristicsJSON = new JSONArray();
+            for(BluetoothGattCharacteristic characteristic : characteristics) {
+                JSONArray properties = new JSONArray();
+                for(BluetoothGattDescriptor descriptor : characteristic.getDescriptors()){
+                    properties.put(descriptor.getValue());
+                }
+
+                JSONObject jsonCharacteristic = new JSONObject();
+                jsonCharacteristic.put("uuid", characteristic.getUuid().toString());
+                jsonCharacteristic.put("properties", properties);
+                characteristicsJSON.put(jsonCharacteristic);
+            }
+
+            JSONObject message = new JSONObject();
+            message.put("type", "characteristicsDiscover");
+            message.put("peripheralUuid", peripheralUuid);
+            message.put("serviceUuid", serviceUuid);
+            message.put("characteristics", characteristicsJSON);
+
+            Log.e(TAG, message.toString());
+            conn.send(message.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
     private JSONObject createDiscoverMessage(ScanResult scanResult, int rssi) {
         try {
             BluetoothDevice device = scanResult.getDevice();
@@ -242,6 +278,7 @@ public class NobleWebSocketServer extends WebSocketServer {
 
 
 
+
     public static abstract class OnScanListener{
         public abstract void onScanListener(List<String> uuids, int connId);
     }
@@ -260,7 +297,7 @@ public class NobleWebSocketServer extends WebSocketServer {
     }
 
     public static abstract class DiscoverCharacteristicsListener {
-        public abstract void onDiscoverCharacteristics(int connIndex, String peripheralUuid, List<String> characteristicUuids);
+        public abstract void onDiscoverCharacteristics(int connIndex, String peripheralUuid, String serviceUuid, List<String> characteristicUuids);
 
     }
 }

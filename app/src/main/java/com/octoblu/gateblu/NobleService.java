@@ -94,6 +94,7 @@ public class NobleService extends IntentService {
             @Override
             public void onConnect(int connIndex, String deviceAddress) {
                 ScanResult scanResult = scanResultMap.get(deviceAddress);
+
             }
         });
 
@@ -113,18 +114,26 @@ public class NobleService extends IntentService {
 
         webSocketServer.setDiscoverCharacteristicsListener(new NobleWebSocketServer.DiscoverCharacteristicsListener(){
             @Override
-            public void onDiscoverCharacteristics(int connIndex, String deviceAddress, List<String> characteristicUuids) {
+            public void onDiscoverCharacteristics(final int connIndex, final String deviceAddress, final String serviceUuid, List<String> characteristicUuids) {
                 ScanResult scanResult = scanResultMap.get(deviceAddress);
                 BluetoothGatt gatt = scanResult.getDevice().connectGatt(getApplicationContext(), true, new BluetoothGattCallback() {
                     @Override
-                    public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                        super.onCharacteristicRead(gatt, characteristic, status);
-                        Log.e(TAG, "" + gatt + characteristic + status);
+                    public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                        super.onConnectionStateChange(gatt, status, newState);
+                        gatt.discoverServices();
+                    }
+
+                    @Override
+                    public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+                        super.onServicesDiscovered(gatt, status);
+                        BluetoothGattService service = gatt.getService(UUID.fromString(serviceUuid));
+                        List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
+
+
+                        webSocketServer.sendDiscoveredCharacteristics(connIndex, deviceAddress, serviceUuid, characteristics);
                     }
                 });
-                for(String uuid : characteristicUuids) {
-                    gatt.readCharacteristic(new BluetoothGattCharacteristic(UUID.fromString(uuid), BluetoothGattCharacteristic.PROPERTY_READ, BluetoothGattCharacteristic.PERMISSION_READ));
-                }
+                gatt.discoverServices();
             }
         });
 
