@@ -2,7 +2,9 @@ package com.octoblu.gateblu;
 
 import android.util.Log;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Device {
     private static final String TAG = "Gateblu:Device";
@@ -10,10 +12,14 @@ public class Device {
     private boolean online;
     private String name;
     private String type;
+    private String uuid;
+    private String token;
 
-    public Device(String name, String type) {
+    public Device(String name, String type, String uuid, String token) {
         this.name = name;
         this.type = type;
+        this.uuid = uuid;
+        this.token = token;
         this.online = true;
         this.onOnlineChangedListeners = new ArrayList<OnlineChangedListener>();
     }
@@ -53,6 +59,14 @@ public class Device {
     public void toggle() {
         this.setOnline(!this.online);
         Log.d(TAG, "I be toggling, am now: " + this.online);
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public String getToken() {
+        return token;
     }
 
     public static abstract class OnlineChangedListener{
