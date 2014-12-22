@@ -17,7 +17,9 @@ import org.json.JSONObject;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class NobleWebSocketServer extends WebSocketServer {
     private final static String TAG = "gateblu:NobleWebSocketServer";
@@ -25,10 +27,11 @@ public class NobleWebSocketServer extends WebSocketServer {
     private List<OnStopScanListener> onStopScanListeners = new ArrayList<>();
     private List<ConnectListener> connectListeners = new ArrayList<>();
     private List<DiscoverServicesListener> discoverServicesListeners = new ArrayList<>();
-    private List<WebSocket> connections = new ArrayList<>();
+    private Map<Integer,WebSocket> connections = new HashMap<>();
     private List<DiscoverCharacteristicsListener> discoverCharacteristicsListeners = new ArrayList<>();
     private List<WriteListener> writeListeners = new ArrayList<>();
     private List<NotifyListener> notifyListeners = new ArrayList<>();
+    private List<DisconnectListener> disconnectListeners = new ArrayList<>();
 
     public NobleWebSocketServer(InetSocketAddress address) {
         super(address);
@@ -38,19 +41,23 @@ public class NobleWebSocketServer extends WebSocketServer {
     @Override
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
         Log.d(TAG, "something connected!");
-        connections.add(conn);
+        connections.put(conn.hashCode(), conn);
     }
 
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote) {
-        connections.remove(conn);
+        connections.remove(conn.hashCode());
+
+        for(DisconnectListener disconnectListener : disconnectListeners){
+            disconnectListener.onDisconnect();
+        }
     }
 
     @Override
     public void onMessage(WebSocket conn, String message) {
         Log.d(TAG, "onMessage: " + message);
         try {
-            routeMessage(connections.indexOf(conn), message);
+            routeMessage(conn.hashCode(), message);
         } catch (JSONException e) {
             Log.e(TAG, "something bad happened related to json parsing", e);
         }
@@ -340,6 +347,10 @@ public class NobleWebSocketServer extends WebSocketServer {
         this.discoverCharacteristicsListeners.add(listener);
     }
 
+    public void setDisconnectListener(DisconnectListener listener) {
+        this.disconnectListeners.add(listener);
+    }
+
     public void setWriteListener(WriteListener listener) {
         this.writeListeners.add(listener);
     }
@@ -388,5 +399,9 @@ public class NobleWebSocketServer extends WebSocketServer {
 
     public static abstract class NotifyListener {
         public abstract void notifyDevice(int connId, String peripheralUuid, String serviceUuid, String characteristicUuid, boolean setNotify);
+    }
+
+    public static abstract class DisconnectListener {
+        public abstract void onDisconnect();
     }
 }

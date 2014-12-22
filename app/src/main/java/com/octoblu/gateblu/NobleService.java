@@ -152,6 +152,15 @@ public class NobleService extends IntentService {
             }
         });
 
+        webSocketServer.setDisconnectListener(new NobleWebSocketServer.DisconnectListener(){
+            @Override
+            public void onDisconnect() {
+                for(BluetoothGatt gatt : gattMap.values()){
+                    gatt.disconnect();
+                }
+            }
+        });
+
         webSocketServer.setDiscoverServicesListener(new NobleWebSocketServer.DiscoverServicesListener(){
             @Override
             public void onDiscoverServices(final int connIndex, final String deviceAddress, final List<String> uuids) {

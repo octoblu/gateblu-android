@@ -26,10 +26,14 @@ import java.util.concurrent.Executors;
 public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
 
     private static final String TAG = "Gateblu:GatebluActivity";
+    public static final String STOP = "stop";
+    public static final String RESUME = "resume";
+    public static final int PERSISTENT_NOTIFICATION_ID = 1;
     private final List<Device> devices = new ArrayList<>();
     private final List<WebView> webviews = new ArrayList<>();
     private final ExecutorService threadPool = Executors.newCachedThreadPool();
     private DeviceGridAdapter deviceGridAdapter;
+    private boolean connectorsAreRunning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +41,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
         java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
+
 
         setContentView(R.layout.activity_gateblu);
         this.devices.addAll(generateDevices());
@@ -49,21 +54,9 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         Intent nobleServiceIntent = new Intent(this, NobleService.class);
         startService(nobleServiceIntent);
 
-        for (Device device : devices) {
-            WebView webView = new WebView(this);
-            WebSettings settings = webView.getSettings();
-            settings.setJavaScriptEnabled(true);
-            settings.setAllowFileAccess(true);
-            settings.setAllowFileAccessFromFileURLs(true);
-            webView.loadUrl("file:///android_asset/www/gateblu.html");
-            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\"};", new IgnoreReturnValue());
-            webviews.add(webView);
-        }
-
-        Notification notification = buildPersistentNotification();
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1, notification);
+        startAllConnectors();
     }
+
 
     private List<Device> generateDevices() {
         List<Device> devices = new ArrayList<>(2);
@@ -73,19 +66,23 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     }
 
     private Notification buildPersistentNotification() {
-        Intent intent = new Intent(this, GatebluActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        Intent resumeIntent = new Intent(this, GatebluActivity.class);
+        resumeIntent.setAction(RESUME);
+        PendingIntent resumePendingIntent = PendingIntent.getActivity(this, 0, resumeIntent, 0);
+
+        Intent stopIntent = new Intent(this, GatebluActivity.class);
+        stopIntent.setAction(STOP);
+        PendingIntent stopPendingIntent   = PendingIntent.getActivity(this, 1, stopIntent, 0);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
         builder.setSmallIcon(android.R.drawable.ic_menu_manage);
         builder.setContentTitle("Gateblu is running");
         builder.setContentText("running, running, running");
-        builder.setContentIntent(pendingIntent);
+        builder.setContentIntent(resumePendingIntent);
+        builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
+        builder.setOngoing(true);
 
-        Notification notification = builder.build();
-        notification.flags = Notification.FLAG_ONGOING_EVENT | Notification.FLAG_FOREGROUND_SERVICE | Notification.FLAG_NO_CLEAR;
-
-        return notification;
+        return builder.build();
     }
 
     @Override
@@ -99,11 +96,24 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_stop_all_connectors) {
+            stopAllConnectors();
+            return true;
+        }
+
+        if (id == R.id.action_start_all_connectors) {
+            startAllConnectors();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.findItem(R.id.action_stop_all_connectors).setVisible(connectorsAreRunning);
+        menu.findItem(R.id.action_start_all_connectors).setVisible(!connectorsAreRunning);
+        return true;
     }
 
     @Override
@@ -115,7 +125,44 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     @Override
     protected void onResume() {
         super.onResume();
-        Log.d(TAG, "I have this many: " + webviews.size());
+
+        if(STOP.equals(getIntent().getAction())) {
+            stopAllConnectors();
+        }
+    }
+
+    private void startAllConnectors() {
+        stopAllConnectors(); // For safety
+
+        for (Device device : devices) {
+            WebView webView = new WebView(this);
+            WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setAllowFileAccess(true);
+            settings.setAllowFileAccessFromFileURLs(true);
+            webView.loadUrl("file:///android_asset/www/gateblu.html");
+            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\"};", new IgnoreReturnValue());
+            webviews.add(webView);
+        }
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(PERSISTENT_NOTIFICATION_ID, buildPersistentNotification());
+
+        connectorsAreRunning = true;
+        invalidateOptionsMenu();
+    }
+
+    private void stopAllConnectors() {
+        for(WebView webView : webviews) {
+            webView.destroy();
+        }
+        webviews.clear();
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancelAll();
+
+        connectorsAreRunning = false;
+        invalidateOptionsMenu();
     }
 
     @Override
