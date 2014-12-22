@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -68,7 +69,7 @@ public class NobleService extends IntentService {
                     @Override
                     public void onScanResult(int callbackType, ScanResult result) {
                         super.onScanResult(callbackType, result);
-                        Log.w(TAG, "Scanned a thing!: " + result.getDevice().getName());
+                        Log.i(TAG, "Scanned a thing!: " + result.getDevice().getName());
                         scanResultMap.put(result.getDevice().getAddress(), result);
                         webSocketServer.sendDiscoveredDevice(result, connId);
                     }
@@ -99,8 +100,10 @@ public class NobleService extends IntentService {
                     @Override
                     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                         super.onConnectionStateChange(gatt, status, newState);
-                        Log.i(TAG, "onConnectionStateChange");
-                        webSocketServer.sendConnectedToDevice(connIndex, deviceAddress);
+                        if(newState == BluetoothProfile.STATE_CONNECTED){
+                            Log.i(TAG, "Connected to: " + deviceAddress);
+                            webSocketServer.sendConnectedToDevice(connIndex, deviceAddress);
+                        }
                     }
 
                     @Override

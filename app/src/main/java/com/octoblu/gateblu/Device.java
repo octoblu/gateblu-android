@@ -5,9 +5,15 @@ import android.util.Log;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Device {
     private static final String TAG = "Gateblu:Device";
+    public static final String UUID = "uuid";
+    public static final String TOKEN = "token";
+    public static final String NAME = "name";
+    public static final String TYPE = "type";
     private final ArrayList<OnlineChangedListener> onOnlineChangedListeners;
     private boolean online;
     private String name;
@@ -68,6 +74,30 @@ public class Device {
     public String getToken() {
         return token;
     }
+
+    public Map<String,String> toMap() {
+        Map<String, String> deviceMap = new HashMap<>();
+        deviceMap.put(UUID, uuid);
+        deviceMap.put(TOKEN, token);
+        deviceMap.put(NAME, name);
+        deviceMap.put(TYPE, type);
+        return deviceMap;
+    }
+
+    public static Device fromMap(Map<String,String> deviceMap){
+        return new Device(deviceMap.get(NAME), deviceMap.get(TYPE), deviceMap.get(UUID), deviceMap.get(TOKEN));
+    }
+
+    public static List<Device> fromMapList(List<HashMap<String, String>> devicesMapList) {
+        List<Device> devices = new ArrayList<>(devicesMapList.size());
+
+        for(Map<String,String> deviceMap : devicesMapList){
+            devices.add(fromMap(deviceMap));
+        }
+
+        return devices;
+    }
+
 
     public static abstract class OnlineChangedListener{
         public abstract void onOnlineChanged();
