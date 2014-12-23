@@ -8,6 +8,8 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.octoblu.gateblu.models.Device;
+
 import java.util.List;
 
 public class DeviceGridAdapter extends BaseAdapter {

@@ -1,8 +1,7 @@
-package com.octoblu.gateblu;
+package com.octoblu.gateblu.models;
 
 import android.util.Log;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

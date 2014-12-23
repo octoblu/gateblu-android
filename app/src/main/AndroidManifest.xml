@@ -18,7 +18,7 @@
             </intent-filter>
         </activity>
         <service android:name=".NobleService"></service>
-        <service android:name=".DeviceManagerService"></service>
+        <service android:name="com.octoblu.meshblu.MeshbluService"></service>
     </application>
 
 </manifest>

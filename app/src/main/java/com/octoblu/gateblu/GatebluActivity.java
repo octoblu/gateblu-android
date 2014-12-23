@@ -18,6 +18,9 @@ import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.GridView;
 
+import com.octoblu.gateblu.models.Device;
+import com.octoblu.meshblu.MeshbluService;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -51,10 +54,13 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         gridView.setAdapter(deviceGridAdapter);
         gridView.setOnItemClickListener(this);
 
-        Intent nobleServiceIntent = new Intent(this, NobleService.class);
-        startService(nobleServiceIntent);
+//        Intent nobleServiceIntent = new Intent(this, NobleService.class);
+//        startService(nobleServiceIntent);
 
-        startAllConnectors();
+        Intent meshbluServiceIntent = new Intent(this, MeshbluService.class);
+        startService(meshbluServiceIntent);
+
+//        startAllConnectors();
     }
 
 
