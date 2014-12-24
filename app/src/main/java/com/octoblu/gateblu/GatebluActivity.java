@@ -1,12 +1,16 @@
 package com.octoblu.gateblu;
 
+import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -36,10 +40,15 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
     private static final String TAG = "Gateblu:GatebluActivity";
+    private static final String PREFERENCES_FILE_NAME = "meshblu_preferences";
+    public static final String UUID = "uuid";
+    public static final String TOKEN = "token";
     private final List<Device> devices = new ArrayList<>();
     private final List<WebView> webviews = new ArrayList<>();
     private DeviceGridAdapter deviceGridAdapter;
     private boolean connectorsAreRunning = false;
+    private Intent meshbluServiceIntent;
+    private GridView gridView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,16 +59,12 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         setContentView(R.layout.activity_gateblu);
 
-        deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), devices);
-        GridView gridView = (GridView)findViewById(R.id.devices_grid);
-        gridView.setAdapter(deviceGridAdapter);
+        gridView = (GridView)findViewById(R.id.devices_grid);
         gridView.setOnItemClickListener(this);
+        refreshDeviceGrid();
 
         Intent nobleServiceIntent = new Intent(this, NobleService.class);
         startService(nobleServiceIntent);
-
-        Intent meshbluServiceIntent = new Intent(this, MeshbluService.class);
-        startService(meshbluServiceIntent);
 
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(new BroadcastReceiver() {
@@ -67,8 +72,33 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             public void onReceive(Context context, Intent intent) {
                 onReceiveDevicesJSON(intent);
             }
-        }, new IntentFilter("sendDevices"));
+        }, new IntentFilter(MeshbluService.ACTION_SEND_DEVICES));
+
+        localBroadcastManager.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                onReceiveAuthCredentials(intent);
+            }
+        }, new IntentFilter(MeshbluService.ACTION_SEND_AUTH_CREDENTIALS));
+
+        startMeshbluService();
     }
+
+    private void startMeshbluService() {
+        if(meshbluServiceIntent != null){
+            stopService(meshbluServiceIntent);
+        }
+
+        SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
+        String uuid = preferences.getString(UUID, null);
+        String token = preferences.getString(TOKEN, null);
+
+        meshbluServiceIntent = new Intent(this, MeshbluService.class);
+        meshbluServiceIntent.putExtra(MeshbluService.UUID, uuid);
+        meshbluServiceIntent.putExtra(MeshbluService.TOKEN, token);
+        startService(meshbluServiceIntent);
+    }
+
 
     @Override
     protected void onDestroy() {
@@ -124,7 +154,41 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             return true;
         }
 
+        if (id == R.id.action_reset_gateblu) {
+            showResetGatebluDialog();
+        }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showResetGatebluDialog() {
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        dialogBuilder.setTitle("Reset Gateblu?");
+        dialogBuilder.setMessage("This will remove all devices and register an unclaimed Gateblu with Meshblu");
+        dialogBuilder.setPositiveButton("Reset", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                resetGateblu();
+            }
+        });
+        dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {}
+        });
+
+        AlertDialog alertDialog = dialogBuilder.create();
+        alertDialog.show();
+    }
+
+    private void resetGateblu() {
+        stopAllConnectors();
+        devices.clear();
+
+        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
+        preferences.clear();
+        preferences.commit();
+
+        startMeshbluService();
     }
 
     @Override
@@ -182,6 +246,13 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         }
     }
 
+    private void onReceiveAuthCredentials(Intent intent) {
+        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
+        preferences.putString(UUID, intent.getStringExtra(MeshbluService.UUID));
+        preferences.putString(TOKEN, intent.getStringExtra(MeshbluService.TOKEN));
+        preferences.commit();
+    }
+
     public void onReceiveDevicesJSON(Intent intent) {
         List<Device> devices;
 
@@ -196,7 +267,14 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         this.devices.clear();
         this.devices.addAll(devices);
-        startAllConnectors();
+
+        refreshDeviceGrid();
+        startMeshbluService();
+    }
+
+    private void refreshDeviceGrid() {
+        deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), devices);
+        gridView.setAdapter(deviceGridAdapter);
     }
 
     private class IgnoreReturnValue implements ValueCallback<String> {

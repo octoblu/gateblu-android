@@ -7,6 +7,7 @@ import com.github.nkzawa.socketio.client.Ack;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -115,6 +116,7 @@ public class Meshblu extends Emitter {
         JSONObject registerJSON = new JSONObject();
         try {
             registerJSON.put("type", "device:gateblu:android");
+            registerJSON.put("devices", new JSONArray());
         } catch (JSONException e) {
             Log.e(TAG, "Error emitting register", e);
             return;

@@ -6,17 +6,19 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.github.nkzawa.emitter.Emitter;
-import com.octoblu.gateblu.models.Device;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URISyntaxException;
-import java.util.List;
 
 public class MeshbluService extends IntentService{
-    public final static String TAG = "meshblu:MeshbluService";
+    public static final String TAG = "meshblu:MeshbluService";
+    public static final String ACTION_SEND_DEVICES = "sendDevices";
+    public static final String UUID = "uuid";
+    public static final String TOKEN = "token";
+    public static final String ACTION_SEND_AUTH_CREDENTIALS = "sendAuthCredentials";
 
     private LocalBroadcastManager localBroadcastManager;
     private Meshblu meshblu;
@@ -30,8 +32,12 @@ public class MeshbluService extends IntentService{
     protected void onHandleIntent(Intent intent) {
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
 
+        String uuid = intent.getStringExtra(UUID);
+        String token = intent.getStringExtra(TOKEN);
+
         try {
-            meshblu = new Meshblu("834d3711-8aef-11e4-b94a-b19d17114b8a", "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi");
+//            meshblu = new Meshblu("834d3711-8aef-11e4-b94a-b19d17114b8a", "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi");
+            meshblu = new Meshblu(uuid, token);
         } catch (URISyntaxException e) {
             Log.e(TAG, "Failed to initialize meshblu", e);
             return;
@@ -41,11 +47,30 @@ public class MeshbluService extends IntentService{
             @Override
             public void call(Object... args) {
                 Log.d(TAG, "Connected to Meshblu as: " + meshblu.getUuid() + ":" + meshblu.getToken());
-                fetchGateblu((JSONObject) args[0]);
+                JSONObject authCredentials = (JSONObject) args[0];
+                broadcastAuthCredentials(authCredentials);
+                fetchGateblu(authCredentials);
             }
         });
 
         meshblu.connect();
+    }
+
+    private void broadcastAuthCredentials(JSONObject authCredentials) {
+        String uuid;
+        String token;
+        try {
+            uuid = authCredentials.getString(UUID);
+            token = authCredentials.getString(TOKEN);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing authCredentials", e);
+            return;
+        }
+
+        Intent intent = new Intent(ACTION_SEND_AUTH_CREDENTIALS);
+        intent.putExtra(UUID, uuid);
+        intent.putExtra(TOKEN, token);
+        localBroadcastManager.sendBroadcast(intent);
     }
 
     private void fetchGateblu(JSONObject gatebluJSON) {
@@ -64,7 +89,7 @@ public class MeshbluService extends IntentService{
     }
 
     private void broadcastDevicesJSON(JSONArray devicesJSON) {
-        Intent intent = new Intent("sendDevices");
+        Intent intent = new Intent(ACTION_SEND_DEVICES);
         intent.putExtra("devices", devicesJSON.toString());
         localBroadcastManager.sendBroadcast(intent);
     }
