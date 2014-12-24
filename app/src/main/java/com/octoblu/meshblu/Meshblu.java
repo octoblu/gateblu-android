@@ -139,6 +139,15 @@ public class Meshblu extends Emitter {
         });
     }
 
+    public void whoami(JSONObject gatebluJSON, final Listener listener) {
+        socket.emit("whoami", new JSONObject[]{gatebluJSON}, new Ack() {
+            @Override
+            public void call(Object... args) {
+                listener.call(args);
+            }
+        });
+    }
+
     public String getUuid() {
         return uuid;
     }
@@ -154,4 +163,5 @@ public class Meshblu extends Emitter {
     private void setToken(String token) {
         this.token = token;
     }
+
 }

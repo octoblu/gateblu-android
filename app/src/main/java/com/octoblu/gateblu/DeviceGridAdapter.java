@@ -58,6 +58,9 @@ public class DeviceGridAdapter extends BaseAdapter {
 
 
         int imageID = context.getResources().getIdentifier(device.getImageName(), "drawable",  context.getPackageName());
+        if(imageID == 0){
+            imageID = R.drawable.generic;
+        }
 
         viewHolder.name.setText(device.getName());
         viewHolder.image.setImageResource(imageID);

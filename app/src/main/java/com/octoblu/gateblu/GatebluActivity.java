@@ -3,10 +3,13 @@ package com.octoblu.gateblu;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -21,20 +24,20 @@ import android.widget.GridView;
 import com.octoblu.gateblu.models.Device;
 import com.octoblu.meshblu.MeshbluService;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
 
-    private static final String TAG = "Gateblu:GatebluActivity";
     public static final String STOP = "stop";
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
+    private static final String TAG = "Gateblu:GatebluActivity";
     private final List<Device> devices = new ArrayList<>();
     private final List<WebView> webviews = new ArrayList<>();
-    private final ExecutorService threadPool = Executors.newCachedThreadPool();
     private DeviceGridAdapter deviceGridAdapter;
     private boolean connectorsAreRunning = false;
 
@@ -45,30 +48,32 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
         java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
 
-
         setContentView(R.layout.activity_gateblu);
-        this.devices.addAll(generateDevices());
 
         deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), devices);
         GridView gridView = (GridView)findViewById(R.id.devices_grid);
         gridView.setAdapter(deviceGridAdapter);
         gridView.setOnItemClickListener(this);
 
-//        Intent nobleServiceIntent = new Intent(this, NobleService.class);
-//        startService(nobleServiceIntent);
+        Intent nobleServiceIntent = new Intent(this, NobleService.class);
+        startService(nobleServiceIntent);
 
         Intent meshbluServiceIntent = new Intent(this, MeshbluService.class);
         startService(meshbluServiceIntent);
 
-//        startAllConnectors();
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        localBroadcastManager.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                onReceiveDevicesJSON(intent);
+            }
+        }, new IntentFilter("sendDevices"));
     }
 
-
-    private List<Device> generateDevices() {
-        List<Device> devices = new ArrayList<>(2);
-        devices.add(new Device("Blight", "device:bean", "e6596bd1-86da-11e4-a63b-43e66bcc8635", "0lbyf226ug1u4n29ut86ktq3le8c9pb9"));
-        devices.add(new Device("Pestilence", "device:bean", "4d622a21-87ca-11e4-ab86-37bc0463e7ff", "000t127u0htsgiudi2d72oqqet6mkj4i"));
-        return devices;
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy");
     }
 
     private Notification buildPersistentNotification() {
@@ -99,6 +104,13 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.findItem(R.id.action_stop_all_connectors).setVisible(connectorsAreRunning);
+        menu.findItem(R.id.action_start_all_connectors).setVisible(!connectorsAreRunning);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
@@ -116,25 +128,9 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     }
 
     @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.action_stop_all_connectors).setVisible(connectorsAreRunning);
-        menu.findItem(R.id.action_start_all_connectors).setVisible(!connectorsAreRunning);
-        return true;
-    }
-
-    @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Device device = deviceGridAdapter.getItem(position);
         device.toggle();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if(STOP.equals(getIntent().getAction())) {
-            stopAllConnectors();
-        }
     }
 
     private void startAllConnectors() {
@@ -178,15 +174,33 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.d(TAG, "onDestroy");
+    protected void onResume() {
+        super.onResume();
+
+        if(STOP.equals(getIntent().getAction())) {
+            stopAllConnectors();
+        }
+    }
+
+    public void onReceiveDevicesJSON(Intent intent) {
+        List<Device> devices;
+
+        try {
+            JSONArray devicesJSON = new JSONArray(intent.getStringExtra("devices"));
+            devices = Device.fromJSONArray(devicesJSON);
+            Log.d(TAG, "onReceiveDevicesJSON: " + devicesJSON);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing JSON from intent", e);
+            return;
+        }
+
+        this.devices.clear();
+        this.devices.addAll(devices);
+        startAllConnectors();
     }
 
     private class IgnoreReturnValue implements ValueCallback<String> {
         @Override
-        public void onReceiveValue(String value) {
-
-        }
+        public void onReceiveValue(String value) {}
     }
 }

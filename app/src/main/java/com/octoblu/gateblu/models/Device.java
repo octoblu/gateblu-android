@@ -2,7 +2,12 @@ package com.octoblu.gateblu.models;
 
 import android.util.Log;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,29 +79,25 @@ public class Device {
         return token;
     }
 
-    public Map<String,String> toMap() {
-        Map<String, String> deviceMap = new HashMap<>();
-        deviceMap.put(UUID, uuid);
-        deviceMap.put(TOKEN, token);
-        deviceMap.put(NAME, name);
-        deviceMap.put(TYPE, type);
-        return deviceMap;
-    }
+    public static List<Device> fromJSONArray(JSONArray devicesJSON) throws JSONException {
+        List<Device> devices = new ArrayList<>();
 
-    public static Device fromMap(Map<String,String> deviceMap){
-        return new Device(deviceMap.get(NAME), deviceMap.get(TYPE), deviceMap.get(UUID), deviceMap.get(TOKEN));
-    }
+        for(int i=0; i<devicesJSON.length(); i++){
+            JSONObject deviceJSON = devicesJSON.getJSONObject(i);
+            devices.add(Device.fromJSONObject(deviceJSON));
 
-    public static List<Device> fromMapList(List<HashMap<String, String>> devicesMapList) {
-        List<Device> devices = new ArrayList<>(devicesMapList.size());
-
-        for(Map<String,String> deviceMap : devicesMapList){
-            devices.add(fromMap(deviceMap));
         }
 
         return devices;
     }
 
+    private static Device fromJSONObject(JSONObject deviceJSON) throws JSONException {
+        String name = deviceJSON.has(NAME) ? deviceJSON.getString(NAME) : "Unknown";
+        String type = deviceJSON.has(TYPE) ? deviceJSON.getString(TYPE) : "device:generic";
+        String uuid = deviceJSON.getString(UUID);
+        String token = deviceJSON.getString(TOKEN);
+        return new Device(name, type, uuid, token);
+    }
 
     public static abstract class OnlineChangedListener{
         public abstract void onOnlineChanged();
