@@ -6,4 +6,6 @@
     <string name="action_stop_all_connectors">Stop All Connectors</string>
     <string name="action_start_all_connectors">Start All Connectors</string>
     <string name="action_reset_gateblu">Reset Gateblu</string>
+    <string name="no_devices_info_header">No Devices!</string>
+    <string name="no_devices_info_content">Sign in to Octoblu to add some</string>
 </resources>

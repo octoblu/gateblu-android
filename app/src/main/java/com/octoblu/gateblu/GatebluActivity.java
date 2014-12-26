@@ -24,6 +24,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import com.octoblu.gateblu.models.Device;
 import com.octoblu.meshblu.MeshbluService;
@@ -33,9 +35,9 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
-
     public static final String STOP = "stop";
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
@@ -49,6 +51,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     private boolean connectorsAreRunning = false;
     private Intent meshbluServiceIntent;
     private GridView gridView;
+    private LinearLayout noDevicesInfoView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +64,10 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         gridView = (GridView)findViewById(R.id.devices_grid);
         gridView.setOnItemClickListener(this);
+        noDevicesInfoView = (LinearLayout) findViewById(R.id.no_devices_info);
+        int robotImage = getResources().getIdentifier("robot" + randInt(1, 9), "drawable", getPackageName());
+        ImageView robotImageView = (ImageView) findViewById(R.id.robot_image);
+        robotImageView.setImageResource(robotImage);
         refreshDeviceGrid();
 
         Intent nobleServiceIntent = new Intent(this, NobleService.class);
@@ -274,8 +281,18 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     }
 
     private void refreshDeviceGrid() {
+        boolean showDevices = (devices.size() > 0);
+        Log.i(TAG, "showDevices is : " + showDevices);
+        gridView.setVisibility(showDevices ? View.VISIBLE : View.GONE);
+        noDevicesInfoView.setVisibility(showDevices ? View.GONE : View.VISIBLE);
+
         deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), devices);
         gridView.setAdapter(deviceGridAdapter);
+    }
+
+    public int randInt(int min, int max) {
+        Random rand = new Random();
+        return rand.nextInt((max - min) + 1) + min;
     }
 
     private class IgnoreReturnValue implements ValueCallback<String> {
