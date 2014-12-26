@@ -201,13 +201,14 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         stopAllConnectors(); // For safety
 
         for (Device device : devices) {
+            Log.i(TAG, "Starting up a: " + device.getConnector());
             WebView webView = new WebView(this);
             WebSettings settings = webView.getSettings();
             settings.setJavaScriptEnabled(true);
             settings.setAllowFileAccess(true);
             settings.setAllowFileAccessFromFileURLs(true);
             webView.loadUrl("file:///android_asset/www/gateblu.html");
-            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\"};", new IgnoreReturnValue());
+            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\", connector: \"" + device.getConnector() + "\"};", new IgnoreReturnValue());
             webviews.add(webView);
         }
 
@@ -269,7 +270,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         this.devices.addAll(devices);
 
         refreshDeviceGrid();
-        startMeshbluService();
+        startAllConnectors();
     }
 
     private void refreshDeviceGrid() {

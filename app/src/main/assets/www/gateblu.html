@@ -1,13 +1,31 @@
 <html>
-    <head>
-        <script src="http://gateblu.s3.amazonaws.com/javascript/meshblu-bean.js"></script>
-    </head>
     <script>
-        var bean = new Connector({
-           server: "meshblu.octoblu.com",
-           port: 80,
-           uuid: meshbluDevice.uuid,
-           token: meshbluDevice.token
+        var JavaScript = {
+          load: function(src, callback) {
+            var script = document.createElement('script'),
+                loaded;
+            script.setAttribute('src', src);
+            if (callback) {
+              script.onreadystatechange = script.onload = function() {
+                if (!loaded) {
+                  callback();
+                }
+                loaded = true;
+              };
+            }
+            document.getElementsByTagName('head')[0].appendChild(script);
+          }
+        };
+
+        var connectorPath = "../connectors/" + meshbluDevice.connector + ".js";
+        JavaScript.load(connectorPath, function(){
+            console.log('Started');
+            var bean = new Connector({
+               server: "meshblu.octoblu.com",
+               port: 80,
+               uuid: meshbluDevice.uuid,
+               token: meshbluDevice.token
+            });
         });
     </script>
     <body>

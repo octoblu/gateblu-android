@@ -18,18 +18,21 @@ public class Device {
     public static final String TOKEN = "token";
     public static final String NAME = "name";
     public static final String TYPE = "type";
+    public static final String CONNECTOR = "connector";
     private final ArrayList<OnlineChangedListener> onOnlineChangedListeners;
     private boolean online;
     private String name;
     private String type;
     private String uuid;
     private String token;
+    private String connector;
 
-    public Device(String name, String type, String uuid, String token) {
+    public Device(String name, String type, String uuid, String token, String connector) {
         this.name = name;
         this.type = type;
         this.uuid = uuid;
         this.token = token;
+        this.connector = connector;
         this.online = true;
         this.onOnlineChangedListeners = new ArrayList<OnlineChangedListener>();
     }
@@ -79,13 +82,16 @@ public class Device {
         return token;
     }
 
+    public String getConnector() {
+        return connector;
+    }
+
     public static List<Device> fromJSONArray(JSONArray devicesJSON) throws JSONException {
         List<Device> devices = new ArrayList<>();
 
         for(int i=0; i<devicesJSON.length(); i++){
             JSONObject deviceJSON = devicesJSON.getJSONObject(i);
             devices.add(Device.fromJSONObject(deviceJSON));
-
         }
 
         return devices;
@@ -96,7 +102,8 @@ public class Device {
         String type = deviceJSON.has(TYPE) ? deviceJSON.getString(TYPE) : "device:generic";
         String uuid = deviceJSON.getString(UUID);
         String token = deviceJSON.getString(TOKEN);
-        return new Device(name, type, uuid, token);
+        String connector = deviceJSON.getString(CONNECTOR);
+        return new Device(name, type, uuid, token, connector);
     }
 
     public static abstract class OnlineChangedListener{
