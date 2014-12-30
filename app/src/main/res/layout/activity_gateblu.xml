@@ -29,14 +29,14 @@
             android:gravity="center"
             android:text="@string/no_devices_info_header"
             android:textColor="#000"
-            android:textSize="24pt" />
+            android:textSize="24sp" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/no_devices_info_content"
             android:textColor="#000"
-            android:textSize="12pt" />
+            android:textSize="12sp" />
         <ImageView
             android:id="@+id/robot_image"
             android:layout_width="wrap_content"
@@ -44,4 +44,32 @@
             android:layout_weight="1"
             android:src="@drawable/robot1"/>
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/connecting_to_meshblu_spinner"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/connecting_to_meshblu_header"
+            android:textColor="#000"
+            android:textSize="24sp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/connecting_to_meshblu_content"
+            android:textColor="#000"
+            android:textSize="12sp"/>
+        <ProgressBar
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_weight="1" />
+        </LinearLayout>
 </LinearLayout>

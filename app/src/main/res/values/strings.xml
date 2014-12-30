@@ -8,4 +8,6 @@
     <string name="action_reset_gateblu">Reset Gateblu</string>
     <string name="no_devices_info_header">No Devices!</string>
     <string name="no_devices_info_content">Sign in to Octoblu to add some</string>
+    <string name="connecting_to_meshblu_header">Connecting to Meshblu</string>
+    <string name="connecting_to_meshblu_content">Please wait...</string>
 </resources>

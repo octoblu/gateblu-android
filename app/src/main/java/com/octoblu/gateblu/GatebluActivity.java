@@ -1,7 +1,6 @@
 package com.octoblu.gateblu;
 
 import android.app.AlertDialog;
-import android.app.DatePickerDialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -47,11 +46,13 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     public static final String TOKEN = "token";
     private final List<Device> devices = new ArrayList<>();
     private final List<WebView> webviews = new ArrayList<>();
-    private DeviceGridAdapter deviceGridAdapter;
+    private boolean meshbluHasConnected = false;
     private boolean connectorsAreRunning = false;
+    private DeviceGridAdapter deviceGridAdapter;
     private Intent meshbluServiceIntent;
     private GridView gridView;
     private LinearLayout noDevicesInfoView;
+    private LinearLayout connectingToMeshbluSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,11 +64,15 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         setContentView(R.layout.activity_gateblu);
 
         gridView = (GridView)findViewById(R.id.devices_grid);
-        gridView.setOnItemClickListener(this);
         noDevicesInfoView = (LinearLayout) findViewById(R.id.no_devices_info);
+        connectingToMeshbluSpinner = (LinearLayout) findViewById(R.id.connecting_to_meshblu_spinner);
+
+        gridView.setOnItemClickListener(this);
+
         int robotImage = getResources().getIdentifier("robot" + randInt(1, 9), "drawable", getPackageName());
         ImageView robotImageView = (ImageView) findViewById(R.id.robot_image);
         robotImageView.setImageResource(robotImage);
+
         refreshDeviceGrid();
 
         Intent nobleServiceIntent = new Intent(this, NobleService.class);
@@ -88,13 +93,15 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             }
         }, new IntentFilter(MeshbluService.ACTION_SEND_AUTH_CREDENTIALS));
 
-        startMeshbluService();
+        restartMeshbluService();
     }
 
-    private void startMeshbluService() {
+    private void restartMeshbluService() {
         if(meshbluServiceIntent != null){
             stopService(meshbluServiceIntent);
         }
+        meshbluHasConnected = false;
+        connectorsAreRunning = false;
 
         SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
         String uuid = preferences.getString(UUID, null);
@@ -191,11 +198,13 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         stopAllConnectors();
         devices.clear();
 
+
         SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
         preferences.clear();
         preferences.commit();
 
-        startMeshbluService();
+        restartMeshbluService();
+        refreshDeviceGrid();
     }
 
     @Override
@@ -275,6 +284,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         this.devices.clear();
         this.devices.addAll(devices);
+        this.meshbluHasConnected = true;
 
         refreshDeviceGrid();
         startAllConnectors();
@@ -283,8 +293,20 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     private void refreshDeviceGrid() {
         boolean showDevices = (devices.size() > 0);
         Log.i(TAG, "showDevices is : " + showDevices);
-        gridView.setVisibility(showDevices ? View.VISIBLE : View.GONE);
-        noDevicesInfoView.setVisibility(showDevices ? View.GONE : View.VISIBLE);
+
+        if(!meshbluHasConnected){
+            gridView.setVisibility(View.GONE);
+            noDevicesInfoView.setVisibility(View.GONE);
+            connectingToMeshbluSpinner.setVisibility(View.VISIBLE);
+        } else if (devices.size() == 0) {
+            gridView.setVisibility(View.GONE);
+            noDevicesInfoView.setVisibility(View.VISIBLE);
+            connectingToMeshbluSpinner.setVisibility(View.GONE);
+        } else {
+            gridView.setVisibility(View.VISIBLE);
+            noDevicesInfoView.setVisibility(View.GONE);
+            connectingToMeshbluSpinner.setVisibility(View.GONE);
+        }
 
         deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), devices);
         gridView.setAdapter(deviceGridAdapter);
