@@ -20,6 +20,7 @@
             </intent-filter>
         </activity>
         <service android:name=".NobleService"></service>
+        <service android:name=".NotificationDismissalService"></service>
         <service android:name="com.octoblu.meshblu.MeshbluService"></service>
     </application>
 

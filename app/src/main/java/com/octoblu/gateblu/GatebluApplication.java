@@ -1,5 +1,6 @@
 package com.octoblu.gateblu;
 
+import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -8,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -55,6 +57,9 @@ public class GatebluApplication extends Application {
         Intent nobleServiceIntent = new Intent(this, NobleService.class);
         startService(nobleServiceIntent);
 
+        Intent notificationDismissalService = new Intent(this, NotificationDismissalService.class);
+        startService(notificationDismissalService);
+
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(new BroadcastReceiver() {
             @Override
@@ -79,12 +84,6 @@ public class GatebluApplication extends Application {
         }, new IntentFilter(ACTION_STOP_CONNECTORS));
 
         restartMeshbluService();
-    }
-
-    @Override
-    public void onTerminate() {
-        super.onTerminate();
-        Log.w(TAG, "onTerminate");
     }
 
     public List<Device> getDevices() {
