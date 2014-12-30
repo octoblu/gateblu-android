@@ -11,7 +11,7 @@
         android:id="@+id/devices_grid"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:columnWidth="90dp"
+        android:columnWidth="160dp"
         android:numColumns="auto_fit"
         android:layout_weight="1">
         </GridView>
