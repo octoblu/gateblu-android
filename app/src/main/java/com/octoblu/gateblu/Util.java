@@ -4,9 +4,6 @@ import android.webkit.ValueCallback;
 
 import java.util.Random;
 
-/**
- * Created by roy on 12/30/14.
- */
 public class Util {
     public static int randInt(int min, int max) {
         Random rand = new Random();

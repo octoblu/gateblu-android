@@ -35,8 +35,8 @@ public class MeshbluService extends IntentService{
         String token = intent.getStringExtra(TOKEN);
 
         try {
-//            meshblu = new Meshblu("834d3711-8aef-11e4-b94a-b19d17114b8a", "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi");
-            meshblu = new Meshblu(uuid, token);
+            meshblu = new Meshblu("834d3711-8aef-11e4-b94a-b19d17114b8a", "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi");
+//            meshblu = new Meshblu(uuid, token);
         } catch (URISyntaxException e) {
             Log.e(TAG, "Failed to initialize meshblu", e);
             return;
