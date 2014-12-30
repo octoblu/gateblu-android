@@ -220,7 +220,7 @@ public class GatebluApplication extends Application {
         PendingIntent stopPendingIntent = PendingIntent.getBroadcast(this, 0, stopIntent, 0);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-        builder.setSmallIcon(android.R.drawable.ic_menu_manage);
+        builder.setSmallIcon(R.drawable.ic_stat_spiral);
         builder.setContentTitle("Gateblu is running");
         builder.setContentText("running, running, running");
         builder.setContentIntent(resumePendingIntent);

@@ -2,9 +2,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".GatebluActivity">
     <item android:id="@+id/action_stop_all_connectors" android:title="@string/action_stop_all_connectors"
-        android:orderInCategory="101" app:showAsAction="never" />
+        android:orderInCategory="101" app:showAsAction="always" android:icon="@drawable/ic_action_spiral_light" />
     <item android:id="@+id/action_start_all_connectors" android:title="@string/action_start_all_connectors"
-        android:orderInCategory="101" app:showAsAction="never" />
+        android:orderInCategory="101" app:showAsAction="always" android:icon="@drawable/ic_action_spiral_dark" />
     <item android:id="@+id/action_reset_gateblu" android:title="@string/action_reset_gateblu"
           android:orderInCategory="102" app:showAsAction="never" />
 </menu>
