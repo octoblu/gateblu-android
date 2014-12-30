@@ -18,7 +18,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.webkit.ValueCallback;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.AdapterView;
@@ -35,7 +34,6 @@ import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
     public static final String STOP = "stop";
@@ -57,9 +55,11 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     private LinearLayout spinner;
     private TextView spinnerText;
 
+    // region Activity Overrides
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "onCreate");
 
         java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
         java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
@@ -74,7 +74,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         gridView.setOnItemClickListener(this);
 
-        int robotImage = getResources().getIdentifier("robot" + randInt(1, 9), "drawable", getPackageName());
+        int robotImage = getResources().getIdentifier("robot" + Util.randInt(1, 9), "drawable", getPackageName());
         ImageView robotImageView = (ImageView) findViewById(R.id.robot_image);
         robotImageView.setImageResource(robotImage);
 
@@ -101,50 +101,32 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         restartMeshbluService();
     }
 
-    private void restartMeshbluService() {
-        if(meshbluServiceIntent != null){
-            stopService(meshbluServiceIntent);
-        }
-        meshbluHasConnected = false;
-        connectorsAreRunning = false;
-
-        SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
-        String uuid = preferences.getString(UUID, null);
-        String token = preferences.getString(TOKEN, null);
-
-        meshbluServiceIntent = new Intent(this, MeshbluService.class);
-        meshbluServiceIntent.putExtra(MeshbluService.UUID, uuid);
-        meshbluServiceIntent.putExtra(MeshbluService.TOKEN, token);
-        startService(meshbluServiceIntent);
-    }
-
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "onDestroy");
+        Log.i(TAG, "onDestroy");
     }
 
-    private Notification buildPersistentNotification() {
-        Intent resumeIntent = new Intent(this, GatebluActivity.class);
-        resumeIntent.setAction(RESUME);
-        PendingIntent resumePendingIntent = PendingIntent.getActivity(this, 0, resumeIntent, 0);
-
-        Intent stopIntent = new Intent(this, GatebluActivity.class);
-        stopIntent.setAction(STOP);
-        PendingIntent stopPendingIntent   = PendingIntent.getActivity(this, 1, stopIntent, 0);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-        builder.setSmallIcon(android.R.drawable.ic_menu_manage);
-        builder.setContentTitle("Gateblu is running");
-        builder.setContentText("running, running, running");
-        builder.setContentIntent(resumePendingIntent);
-        builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
-        builder.setOngoing(true);
-
-        return builder.build();
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i(TAG, "onPause");
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i(TAG, "onResume");
+
+        if(STOP.equals(getIntent().getAction())) {
+            stopAllConnectors();
+        }
+
+        refreshDeviceGrid();
+    }
+    // endregion
+
+    //region Options Menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -179,123 +161,9 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         return super.onOptionsItemSelected(item);
     }
+    //endregion
 
-    private void showResetGatebluDialog() {
-        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
-        dialogBuilder.setTitle("Reset Gateblu?");
-        dialogBuilder.setMessage("This will remove all devices and register an unclaimed Gateblu with Meshblu");
-        dialogBuilder.setPositiveButton("Reset", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                resetGateblu();
-            }
-        });
-        dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {}
-        });
-
-        AlertDialog alertDialog = dialogBuilder.create();
-        alertDialog.show();
-    }
-
-    private void resetGateblu() {
-        stopAllConnectors();
-        devices.clear();
-
-
-        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
-        preferences.clear();
-        preferences.commit();
-
-        restartMeshbluService();
-        refreshDeviceGrid();
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Device device = deviceGridAdapter.getItem(position);
-        device.toggle();
-    }
-
-    private void startAllConnectors() {
-        stopAllConnectors(); // For safety
-
-        for (Device device : devices) {
-            Log.i(TAG, "Starting up a: " + device.getConnector());
-            WebView webView = new WebView(this);
-            WebSettings settings = webView.getSettings();
-            settings.setJavaScriptEnabled(true);
-            settings.setAllowFileAccess(true);
-            settings.setAllowFileAccessFromFileURLs(true);
-            webView.loadUrl("file:///android_asset/www/gateblu.html");
-            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\", connector: \"" + device.getConnector() + "\"};", new IgnoreReturnValue());
-            webviews.add(webView);
-        }
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(PERSISTENT_NOTIFICATION_ID, buildPersistentNotification());
-
-        connectorsAreRunning = true;
-        invalidateOptionsMenu();
-    }
-
-    private void stopAllConnectors() {
-        for(WebView webView : webviews) {
-            webView.destroy();
-        }
-        webviews.clear();
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancelAll();
-
-        connectorsAreRunning = false;
-        invalidateOptionsMenu();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        Log.d(TAG, "onPause");
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if(STOP.equals(getIntent().getAction())) {
-            stopAllConnectors();
-        }
-    }
-
-    private void onMeshbluReady(Intent intent) {
-        meshbluHasConnected = true;
-        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
-        preferences.putString(UUID, intent.getStringExtra(MeshbluService.UUID));
-        preferences.putString(TOKEN, intent.getStringExtra(MeshbluService.TOKEN));
-        preferences.commit();
-    }
-
-    public void onReceiveDevicesJSON(Intent intent) {
-        List<Device> devices;
-
-        try {
-            JSONArray devicesJSON = new JSONArray(intent.getStringExtra("devices"));
-            devices = Device.fromJSONArray(devicesJSON);
-            Log.d(TAG, "onReceiveDevicesJSON: " + devicesJSON);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON from intent", e);
-            return;
-        }
-
-        this.devices.clear();
-        this.devices.addAll(devices);
-        fetchedDevices = true;
-
-        refreshDeviceGrid();
-        startAllConnectors();
-    }
-
+    // region View Helpers
     private void refreshDeviceGrid() {
         if(!meshbluHasConnected){
             gridView.setVisibility(View.GONE);
@@ -325,13 +193,148 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         gridView.setAdapter(deviceGridAdapter);
     }
 
-    public int randInt(int min, int max) {
-        Random rand = new Random();
-        return rand.nextInt((max - min) + 1) + min;
+    private void showPersistentNotification() {
+        Intent resumeIntent = new Intent(this, GatebluActivity.class);
+        resumeIntent.setAction(RESUME);
+        PendingIntent resumePendingIntent = PendingIntent.getActivity(this, 0, resumeIntent, 0);
+
+        Intent stopIntent = new Intent(this, GatebluActivity.class);
+        stopIntent.setAction(STOP);
+        PendingIntent stopPendingIntent   = PendingIntent.getActivity(this, 1, stopIntent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        builder.setSmallIcon(android.R.drawable.ic_menu_manage);
+        builder.setContentTitle("Gateblu is running");
+        builder.setContentText("running, running, running");
+        builder.setContentIntent(resumePendingIntent);
+        builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent);
+        builder.setOngoing(true);
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(PERSISTENT_NOTIFICATION_ID, builder.build());
     }
 
-    private class IgnoreReturnValue implements ValueCallback<String> {
-        @Override
-        public void onReceiveValue(String value) {}
+    private void showResetGatebluDialog() {
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        dialogBuilder.setTitle("Reset Gateblu?");
+        dialogBuilder.setMessage("This will remove all devices and register an unclaimed Gateblu with Meshblu");
+        dialogBuilder.setPositiveButton("Reset", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                resetGateblu();
+            }
+        });
+        dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        });
+
+        AlertDialog alertDialog = dialogBuilder.create();
+        alertDialog.show();
     }
+    // endregion
+
+    // region Actions
+    private void resetGateblu() {
+        stopAllConnectors();
+        devices.clear();
+
+
+        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
+        preferences.clear();
+        preferences.commit();
+
+        restartMeshbluService();
+        refreshDeviceGrid();
+    }
+
+    private void restartMeshbluService() {
+        if(meshbluServiceIntent != null){
+            stopService(meshbluServiceIntent);
+        }
+        meshbluHasConnected = false;
+        connectorsAreRunning = false;
+
+        SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
+        String uuid = preferences.getString(UUID, null);
+        String token = preferences.getString(TOKEN, null);
+
+        meshbluServiceIntent = new Intent(this, MeshbluService.class);
+        meshbluServiceIntent.putExtra(MeshbluService.UUID, uuid);
+        meshbluServiceIntent.putExtra(MeshbluService.TOKEN, token);
+        startService(meshbluServiceIntent);
+    }
+
+    private void startAllConnectors() {
+        stopAllConnectors(); // For safety
+
+        for (Device device : devices) {
+            Log.i(TAG, "Starting up a: " + device.getConnector());
+            WebView webView = new WebView(this);
+            WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setAllowFileAccess(true);
+            settings.setAllowFileAccessFromFileURLs(true);
+            webView.loadUrl("file:///android_asset/www/gateblu.html");
+            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\", connector: \"" + device.getConnector() + "\"};", new Util.IgnoreReturnValue());
+            webviews.add(webView);
+        }
+
+        showPersistentNotification();
+
+
+        connectorsAreRunning = true;
+        invalidateOptionsMenu();
+    }
+
+    private void stopAllConnectors() {
+        for(WebView webView : webviews) {
+            webView.destroy();
+        }
+        webviews.clear();
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancelAll();
+
+        connectorsAreRunning = false;
+        invalidateOptionsMenu();
+    }
+    // endregion
+
+    // region Event Listeners
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        Device device = deviceGridAdapter.getItem(position);
+        device.toggle();
+    }
+
+    private void onMeshbluReady(Intent intent) {
+        meshbluHasConnected = true;
+        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
+        preferences.putString(UUID, intent.getStringExtra(MeshbluService.UUID));
+        preferences.putString(TOKEN, intent.getStringExtra(MeshbluService.TOKEN));
+        preferences.commit();
+    }
+
+    public void onReceiveDevicesJSON(Intent intent) {
+        List<Device> devices;
+
+        try {
+            JSONArray devicesJSON = new JSONArray(intent.getStringExtra("devices"));
+            devices = Device.fromJSONArray(devicesJSON);
+            Log.d(TAG, "onReceiveDevicesJSON: " + devicesJSON);
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing JSON from intent", e);
+            return;
+        }
+
+        this.devices.clear();
+        this.devices.addAll(devices);
+        fetchedDevices = true;
+
+        refreshDeviceGrid();
+        startAllConnectors();
+    }
+    // endregion
 }
