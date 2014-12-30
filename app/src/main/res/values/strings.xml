@@ -10,4 +10,5 @@
     <string name="no_devices_info_content">Sign in to Octoblu to add some</string>
     <string name="connecting_to_meshblu_header">Connecting to Meshblu</string>
     <string name="connecting_to_meshblu_content">Please wait...</string>
+    <string name="fetching_devices_header">Fetching Devices</string>
 </resources>

@@ -18,11 +18,10 @@ public class MeshbluService extends IntentService{
     public static final String ACTION_SEND_DEVICES = "sendDevices";
     public static final String UUID = "uuid";
     public static final String TOKEN = "token";
-    public static final String ACTION_SEND_AUTH_CREDENTIALS = "sendAuthCredentials";
+    public static final String ACTION_READY = "ready";
 
     private LocalBroadcastManager localBroadcastManager;
     private Meshblu meshblu;
-    private JSONObject gatebluJSON;
 
     public MeshbluService() {
         super("MeshbluService");
@@ -48,7 +47,7 @@ public class MeshbluService extends IntentService{
             public void call(Object... args) {
                 Log.d(TAG, "Connected to Meshblu as: " + meshblu.getUuid() + ":" + meshblu.getToken());
                 JSONObject authCredentials = (JSONObject) args[0];
-                broadcastAuthCredentials(authCredentials);
+                broadcastReady(authCredentials);
                 fetchGateblu(authCredentials);
             }
         });
@@ -56,7 +55,7 @@ public class MeshbluService extends IntentService{
         meshblu.connect();
     }
 
-    private void broadcastAuthCredentials(JSONObject authCredentials) {
+    private void broadcastReady(JSONObject authCredentials) {
         String uuid;
         String token;
         try {
@@ -67,7 +66,7 @@ public class MeshbluService extends IntentService{
             return;
         }
 
-        Intent intent = new Intent(ACTION_SEND_AUTH_CREDENTIALS);
+        Intent intent = new Intent(ACTION_READY);
         intent.putExtra(UUID, uuid);
         intent.putExtra(TOKEN, token);
         localBroadcastManager.sendBroadcast(intent);

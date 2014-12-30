@@ -25,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.octoblu.gateblu.models.Device;
 import com.octoblu.meshblu.MeshbluService;
@@ -47,12 +48,14 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     private final List<Device> devices = new ArrayList<>();
     private final List<WebView> webviews = new ArrayList<>();
     private boolean meshbluHasConnected = false;
+    private boolean fetchedDevices      = false;
     private boolean connectorsAreRunning = false;
     private DeviceGridAdapter deviceGridAdapter;
     private Intent meshbluServiceIntent;
     private GridView gridView;
     private LinearLayout noDevicesInfoView;
-    private LinearLayout connectingToMeshbluSpinner;
+    private LinearLayout spinner;
+    private TextView spinnerText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +68,9 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         gridView = (GridView)findViewById(R.id.devices_grid);
         noDevicesInfoView = (LinearLayout) findViewById(R.id.no_devices_info);
-        connectingToMeshbluSpinner = (LinearLayout) findViewById(R.id.connecting_to_meshblu_spinner);
+        spinner = (LinearLayout) findViewById(R.id.loading_spinner);
+        spinnerText = (TextView) findViewById(R.id.loading_spinner_text);
+
 
         gridView.setOnItemClickListener(this);
 
@@ -89,9 +94,9 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         localBroadcastManager.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                onReceiveAuthCredentials(intent);
+                onMeshbluReady(intent);
             }
-        }, new IntentFilter(MeshbluService.ACTION_SEND_AUTH_CREDENTIALS));
+        }, new IntentFilter(MeshbluService.ACTION_READY));
 
         restartMeshbluService();
     }
@@ -263,7 +268,8 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         }
     }
 
-    private void onReceiveAuthCredentials(Intent intent) {
+    private void onMeshbluReady(Intent intent) {
+        meshbluHasConnected = true;
         SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
         preferences.putString(UUID, intent.getStringExtra(MeshbluService.UUID));
         preferences.putString(TOKEN, intent.getStringExtra(MeshbluService.TOKEN));
@@ -284,30 +290,37 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         this.devices.clear();
         this.devices.addAll(devices);
-        this.meshbluHasConnected = true;
+        fetchedDevices = true;
 
         refreshDeviceGrid();
         startAllConnectors();
     }
 
     private void refreshDeviceGrid() {
-        boolean showDevices = (devices.size() > 0);
-        Log.i(TAG, "showDevices is : " + showDevices);
-
         if(!meshbluHasConnected){
             gridView.setVisibility(View.GONE);
             noDevicesInfoView.setVisibility(View.GONE);
-            connectingToMeshbluSpinner.setVisibility(View.VISIBLE);
-        } else if (devices.size() == 0) {
+            spinner.setVisibility(View.VISIBLE);
+            spinnerText.setText(R.string.connecting_to_meshblu_header);
+            return;
+        }
+        if(!fetchedDevices) {
+            gridView.setVisibility(View.GONE);
+            noDevicesInfoView.setVisibility(View.GONE);
+            spinner.setVisibility(View.VISIBLE);
+            spinnerText.setText(R.string.fetching_devices_header);
+            return;
+        }
+        if (devices.size() == 0) {
             gridView.setVisibility(View.GONE);
             noDevicesInfoView.setVisibility(View.VISIBLE);
-            connectingToMeshbluSpinner.setVisibility(View.GONE);
-        } else {
-            gridView.setVisibility(View.VISIBLE);
-            noDevicesInfoView.setVisibility(View.GONE);
-            connectingToMeshbluSpinner.setVisibility(View.GONE);
+            spinner.setVisibility(View.GONE);
+            return;
         }
 
+        gridView.setVisibility(View.VISIBLE);
+        noDevicesInfoView.setVisibility(View.GONE);
+        spinner.setVisibility(View.GONE);
         deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), devices);
         gridView.setAdapter(deviceGridAdapter);
     }
