@@ -22,6 +22,7 @@ import com.octoblu.meshblu.MeshbluService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public class GatebluApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.i("Gateblu:GatebluApplication", "onCreate");
+        Log.d("Gateblu:GatebluApplication", "onCreate");
 
         java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
         java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
@@ -71,6 +72,13 @@ public class GatebluApplication extends Application {
         localBroadcastManager.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                onReceiveDeviceJSON(intent);
+            }
+        }, new IntentFilter(MeshbluService.ACTION_SEND_DEVICE));
+
+        localBroadcastManager.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
                 onMeshbluReady(intent);
             }
         }, new IntentFilter(MeshbluService.ACTION_READY));
@@ -85,7 +93,7 @@ public class GatebluApplication extends Application {
         registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.i(TAG, "onReceive: " + ACTION_STOP_CONNECTORS);
+                Log.d(TAG, "onReceive: " + ACTION_STOP_CONNECTORS);
                 turnConnectorsOff();
             }
         }, new IntentFilter(ACTION_STOP_CONNECTORS));
@@ -93,9 +101,18 @@ public class GatebluApplication extends Application {
         restartMeshbluService();
     }
 
-
     public List<Device> getDevices() {
         return devices;
+    }
+
+
+    private Device getDevice(String uuid) {
+        for(Device device : devices) {
+            if(device.getUuid().equals(uuid)){
+                return device;
+            }
+        }
+        return null;
     }
 
     // region State Indicators
@@ -142,6 +159,25 @@ public class GatebluApplication extends Application {
         return getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
     }
 
+    private void onReceiveDeviceJSON(Intent intent) {
+        try {
+            JSONObject deviceJSON = new JSONObject(intent.getStringExtra("device"));
+            Log.i(TAG, "onReceiveDeviceJSON: " + deviceJSON.toString());
+
+            String uuid = deviceJSON.getString(UUID);
+            Device device = getDevice(uuid);
+            if(device == null){
+                return;
+            }
+
+            device.update(deviceJSON);
+            emitDevicesUpdated();
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing JSON from intent", e);
+            return;
+        }
+    }
+
     public void onReceiveDevicesJSON(Intent intent) {
         List<Device> devices;
 
@@ -158,9 +194,13 @@ public class GatebluApplication extends Application {
         this.devices.addAll(devices);
         fetchedDevices = true;
 
-        emitter.emit(EVENT_DEVICES_UPDATED);
+        emitDevicesUpdated();
 
         restartAllConnectors();
+    }
+
+    private void emitDevicesUpdated() {
+        emitter.emit(EVENT_DEVICES_UPDATED);
     }
     // endregion
 
@@ -174,7 +214,7 @@ public class GatebluApplication extends Application {
         preferences.commit();
 
         restartMeshbluService();
-        emitter.emit(EVENT_DEVICES_UPDATED);
+        emitDevicesUpdated();
     }
 
     public void restartAllConnectors() {
@@ -185,7 +225,7 @@ public class GatebluApplication extends Application {
         }
 
         for (Device device : devices) {
-            Log.i(TAG, "Starting up a: " + device.getConnector());
+            Log.d(TAG, "Starting up a: " + device.getConnector());
             WebView webView = new WebView(this);
             WebSettings settings = webView.getSettings();
             settings.setJavaScriptEnabled(true);
@@ -198,7 +238,7 @@ public class GatebluApplication extends Application {
 
         showPersistentNotification();
         connectorsAreRunning = true;
-        emitter.emit(EVENT_DEVICES_UPDATED);
+        emitDevicesUpdated();
     }
 
     private void restartMeshbluService() {
@@ -242,7 +282,7 @@ public class GatebluApplication extends Application {
         notificationManager.cancelAll();
 
         connectorsAreRunning = false;
-        emitter.emit(EVENT_DEVICES_UPDATED);
+        emitDevicesUpdated();
     }
     // endregion
 

@@ -34,7 +34,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i(TAG, "onCreate");
+        Log.d(TAG, "onCreate");
 
         setContentView(R.layout.activity_gateblu);
 
@@ -60,20 +60,20 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.i(TAG, "onDestroy");
+        Log.d(TAG, "onDestroy");
         application.off();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        Log.i(TAG, "onPause");
+        Log.d(TAG, "onPause");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        Log.i(TAG, "onResume");
+        Log.d(TAG, "onResume");
         refreshDeviceGrid();
     }
     // endregion

@@ -28,6 +28,8 @@ public class Meshblu extends Emitter {
      * Emitted with no arguments
      */
     public static final String EVENT_READY = "ready";
+    public static final String UUID = "uuid";
+    public static final String TOKEN = "token";
 
     private final Socket socket;
 
@@ -141,8 +143,23 @@ public class Meshblu extends Emitter {
         });
     }
 
-    public void whoami(JSONObject gatebluJSON, final Listener listener) {
-        socket.emit("whoami", new JSONObject[]{gatebluJSON}, new Ack() {
+    public void whoami(JSONObject deviceJSON, final Listener listener) throws JSONException {
+        JSONObject queryJSON = new JSONObject();
+        queryJSON.put(UUID, deviceJSON.getString(UUID));
+        queryJSON.put(TOKEN, deviceJSON.getString(TOKEN));
+        socket.emit("whoami", new JSONObject[]{queryJSON}, new Ack() {
+            @Override
+            public void call(Object... args) {
+                listener.call(args);
+            }
+        });
+    }
+
+    public void devices(JSONObject deviceJSON, final Listener listener) throws JSONException {
+        JSONObject queryJSON = new JSONObject();
+        queryJSON.put(UUID, deviceJSON.getString(UUID));
+        queryJSON.put(TOKEN, deviceJSON.getString(TOKEN));
+        socket.emit("devices", new JSONObject[]{queryJSON}, new Ack() {
             @Override
             public void call(Object... args) {
                 listener.call(args);
@@ -169,4 +186,6 @@ public class Meshblu extends Emitter {
     private void setToken(String token) {
         this.token = token;
     }
+
+
 }

@@ -19,6 +19,7 @@ public class MeshbluService extends IntentService{
     public static final String UUID = "uuid";
     public static final String TOKEN = "token";
     public static final String ACTION_READY = "ready";
+    public static final String ACTION_SEND_DEVICE = "sendDevice";
 
     private LocalBroadcastManager localBroadcastManager;
 
@@ -84,24 +85,52 @@ public class MeshbluService extends IntentService{
     }
 
     private void fetchGateblu(final Meshblu meshblu, JSONObject gatebluJSON) {
-        meshblu.whoami(gatebluJSON, new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                try {
-                    JSONObject gatebluJSON = (JSONObject) args[0];
-                    JSONArray devicesJSON = gatebluJSON.getJSONArray("devices");
-                    broadcastDevicesJSON(meshblu, devicesJSON);
-                } catch (JSONException e) {
-                    Log.e(TAG, "Error parsing whoami response from Meshblu", e);
+        try {
+            meshblu.whoami(gatebluJSON, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    try {
+                        JSONObject gatebluJSON = (JSONObject) args[0];
+                        JSONArray devicesJSON = gatebluJSON.getJSONArray("devices");
+                        broadcastDevicesJSON(meshblu, devicesJSON);
+                        fetchDevices(meshblu, devicesJSON);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing whoami response from Meshblu", e);
+                    }
                 }
-            }
-        });
+            });
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing whoami response from Meshblu", e);
+        }
+    }
+
+    private void broadcastDeviceJSON(Meshblu meshblu, JSONObject deviceJSON) {
+        Intent intent = new Intent(ACTION_SEND_DEVICE);
+        intent.putExtra("device", deviceJSON.toString());
+        localBroadcastManager.sendBroadcast(intent);
     }
 
     private void broadcastDevicesJSON(Meshblu meshblu, JSONArray devicesJSON) {
         Intent intent = new Intent(ACTION_SEND_DEVICES);
         intent.putExtra("devices", devicesJSON.toString());
         localBroadcastManager.sendBroadcast(intent);
-        meshblu.disconnect();
+    }
+
+    private void fetchDevices(final Meshblu meshblu, JSONArray devicesJSON) throws JSONException {
+        for(int i=0; i<devicesJSON.length(); i++){
+            JSONObject deviceJSON = devicesJSON.getJSONObject(i);
+            meshblu.devices(deviceJSON, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    try {
+                        JSONObject responseJSON = (JSONObject) args[0];
+                        JSONObject deviceJSON = responseJSON.getJSONArray("devices").getJSONObject(0);
+                        broadcastDeviceJSON(meshblu, deviceJSON);
+                    } catch (JSONException e) {
+                        Log.e(TAG, "Error parsing devices response", e);
+                    }
+                }
+            });
+        }
     }
 }

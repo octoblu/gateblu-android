@@ -74,7 +74,7 @@ public class NobleService extends IntentService {
                     @Override
                     public void onScanResult(int callbackType, ScanResult result) {
                         super.onScanResult(callbackType, result);
-                        Log.i(TAG, "Scanned a thing!: " + result.getDevice().getName());
+                        Log.d(TAG, "Scanned a thing!: " + result.getDevice().getName());
                         scanResultMap.put(result.getDevice().getAddress(), result);
                         webSocketServer.sendDiscoveredDevice(result, connId);
                     }
@@ -106,7 +106,7 @@ public class NobleService extends IntentService {
                     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                         super.onConnectionStateChange(gatt, status, newState);
                         if(newState == BluetoothProfile.STATE_CONNECTED){
-                            Log.i(TAG, "Connected to: " + deviceAddress);
+                            Log.d(TAG, "Connected to: " + deviceAddress);
                             webSocketServer.sendConnectedToDevice(connIndex, deviceAddress);
                         }
                     }

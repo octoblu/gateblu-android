@@ -7,10 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Device {
     private static final String TAG = "Gateblu:Device";
@@ -21,18 +18,14 @@ public class Device {
     public static final String CONNECTOR = "connector";
     private final ArrayList<OnlineChangedListener> onOnlineChangedListeners;
     private boolean online;
-    private String name;
-    private String type;
-    private String uuid;
-    private String token;
-    private String connector;
+    private String uuid, token, connector, name, type;
 
-    public Device(String name, String type, String uuid, String token, String connector) {
-        this.name = name;
-        this.type = type;
+    public Device(String uuid, String token, String connector, String name, String type) {
         this.uuid = uuid;
         this.token = token;
         this.connector = connector;
+        this.name = name;
+        this.type = type;
         this.online = true;
         this.onOnlineChangedListeners = new ArrayList<OnlineChangedListener>();
     }
@@ -74,6 +67,11 @@ public class Device {
         Log.d(TAG, "I be toggling, am now: " + this.online);
     }
 
+    public void update(JSONObject deviceJSON) throws JSONException {
+        this.name  = deviceJSON.getString(NAME);
+        this.type  = deviceJSON.getString(TYPE);
+    }
+
     public String getUuid() {
         return uuid;
     }
@@ -103,7 +101,7 @@ public class Device {
         String uuid = deviceJSON.getString(UUID);
         String token = deviceJSON.getString(TOKEN);
         String connector = deviceJSON.getString(CONNECTOR);
-        return new Device(name, type, uuid, token, connector);
+        return new Device(uuid, token, connector, name, type);
     }
 
     public static abstract class OnlineChangedListener{
