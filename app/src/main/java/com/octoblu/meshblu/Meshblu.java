@@ -30,6 +30,7 @@ public class Meshblu extends Emitter {
     public static final String EVENT_READY = "ready";
     public static final String UUID = "uuid";
     public static final String TOKEN = "token";
+    public static final String EVENT_CONFIG = "config";
 
     private final Socket socket;
 
@@ -86,6 +87,14 @@ public class Meshblu extends Emitter {
             public void call(Object... args) {
                 Log.d(TAG, "EVENT_READY");
                 emit(EVENT_READY, args);
+            }
+        });
+
+        socket.on(EVENT_CONFIG, new Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "EVENT_CONFIG");
+                emit(EVENT_CONFIG, args);
             }
         });
     }

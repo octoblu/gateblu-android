@@ -58,6 +58,15 @@ public class MeshbluService extends IntentService{
             }
         });
 
+        meshblu.on(Meshblu.EVENT_CONFIG, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "Gateblu Device record has been updated");
+                JSONObject authCredentials = (JSONObject) args[0];
+                fetchGateblu(meshblu, authCredentials);
+            }
+        });
+
         meshblu.connect();
     }
 
