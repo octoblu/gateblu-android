@@ -97,10 +97,10 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.action_stop_all_connectors:
-                application.stopAllConnectors();
+                application.turnConnectorsOff();
                 return true;
             case R.id.action_start_all_connectors:
-                application.startAllConnectors();
+                application.turnConnectorsOn();
                 return true;
             case R.id.action_reset_gateblu:
                 showResetGatebluDialog();

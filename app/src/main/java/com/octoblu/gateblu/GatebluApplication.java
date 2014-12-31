@@ -1,6 +1,5 @@
 package com.octoblu.gateblu;
 
-import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -9,7 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.os.Bundle;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -35,6 +35,7 @@ public class GatebluApplication extends Application {
     public static final String ACTION_STOP_CONNECTORS = "stopConnectors";
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
+    public static final String RUN_CONNECTORS = "runConnectors";
 
     private boolean meshbluHasConnected = false;
     private boolean fetchedDevices      = false;
@@ -74,21 +75,30 @@ public class GatebluApplication extends Application {
             }
         }, new IntentFilter(MeshbluService.ACTION_READY));
 
+        localBroadcastManager.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                showNoBluetoothAdapterFoundNotification();
+            }
+        }, new IntentFilter(NobleService.ACTION_NO_BLUETOOTH_ADAPTER_FOUND));
+
         registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.i(TAG, "onReceive: " + ACTION_STOP_CONNECTORS);
-                stopAllConnectors();
+                turnConnectorsOff();
             }
         }, new IntentFilter(ACTION_STOP_CONNECTORS));
 
         restartMeshbluService();
     }
 
+
     public List<Device> getDevices() {
         return devices;
     }
 
+    // region State Indicators
     public boolean areConnectorsRunning(){
         return connectorsAreRunning;
     }
@@ -105,6 +115,12 @@ public class GatebluApplication extends Application {
         return devices.size() == 0;
     }
 
+    public boolean shouldRunConnectors() {
+        SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
+        return preferences.getBoolean(RUN_CONNECTORS, true);
+    }
+    // endregion
+
     // region Event Listeners
     public void on(String event, Emitter.Listener fn) {
         emitter.on(event, fn);
@@ -116,10 +132,14 @@ public class GatebluApplication extends Application {
 
     private void onMeshbluReady(Intent intent) {
         meshbluHasConnected = true;
-        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
+        SharedPreferences.Editor preferences = getPreferencesEditor();
         preferences.putString(UUID, intent.getStringExtra(MeshbluService.UUID));
         preferences.putString(TOKEN, intent.getStringExtra(MeshbluService.TOKEN));
         preferences.commit();
+    }
+
+    private SharedPreferences.Editor getPreferencesEditor() {
+        return getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
     }
 
     public void onReceiveDevicesJSON(Intent intent) {
@@ -140,7 +160,7 @@ public class GatebluApplication extends Application {
 
         emitter.emit(EVENT_DEVICES_UPDATED);
 
-        startAllConnectors();
+        restartAllConnectors();
     }
     // endregion
 
@@ -149,11 +169,35 @@ public class GatebluApplication extends Application {
         stopAllConnectors();
         devices.clear();
 
-        SharedPreferences.Editor preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
+        SharedPreferences.Editor preferences = getPreferencesEditor();
         preferences.clear();
         preferences.commit();
 
         restartMeshbluService();
+        emitter.emit(EVENT_DEVICES_UPDATED);
+    }
+
+    public void restartAllConnectors() {
+        stopAllConnectors(); // For safety
+
+        if(!shouldRunConnectors()){
+            return;
+        }
+
+        for (Device device : devices) {
+            Log.i(TAG, "Starting up a: " + device.getConnector());
+            WebView webView = new WebView(this);
+            WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setAllowFileAccess(true);
+            settings.setAllowFileAccessFromFileURLs(true);
+            webView.loadUrl("file:///android_asset/www/gateblu.html");
+            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\", connector: \"" + device.getConnector() + "\"};", new Util.IgnoreReturnValue());
+            webviews.add(webView);
+        }
+
+        showPersistentNotification();
+        connectorsAreRunning = true;
         emitter.emit(EVENT_DEVICES_UPDATED);
     }
 
@@ -174,24 +218,18 @@ public class GatebluApplication extends Application {
         startService(meshbluServiceIntent);
     }
 
-    public void startAllConnectors() {
-        stopAllConnectors(); // For safety
+    public void turnConnectorsOff() {
+        SharedPreferences.Editor editor = getPreferencesEditor();
+        editor.putBoolean(RUN_CONNECTORS, false);
+        editor.apply();
+        stopAllConnectors();
+    }
 
-        for (Device device : devices) {
-            Log.i(TAG, "Starting up a: " + device.getConnector());
-            WebView webView = new WebView(this);
-            WebSettings settings = webView.getSettings();
-            settings.setJavaScriptEnabled(true);
-            settings.setAllowFileAccess(true);
-            settings.setAllowFileAccessFromFileURLs(true);
-            webView.loadUrl("file:///android_asset/www/gateblu.html");
-            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\", connector: \"" + device.getConnector() + "\"};", new Util.IgnoreReturnValue());
-            webviews.add(webView);
-        }
-
-        showPersistentNotification();
-        connectorsAreRunning = true;
-        emitter.emit(EVENT_DEVICES_UPDATED);
+    public void turnConnectorsOn() {
+        SharedPreferences.Editor editor = getPreferencesEditor();
+        editor.putBoolean(RUN_CONNECTORS, true);
+        editor.apply();
+        restartAllConnectors();
     }
 
     public void stopAllConnectors() {
@@ -209,6 +247,23 @@ public class GatebluApplication extends Application {
     // endregion
 
     // region View Helpers
+    private void showNoBluetoothAdapterFoundNotification() {
+        Intent resumeIntent = new Intent(this, GatebluActivity.class);
+        resumeIntent.setAction(RESUME);
+        PendingIntent resumePendingIntent = PendingIntent.getActivity(this, 0, resumeIntent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        builder.setSmallIcon(R.drawable.ic_error_white_24dp);
+        builder.setColor(getResources().getColor(R.color.primary));
+        builder.setContentTitle("Gateblu Error");
+        builder.setContentText("No bluetooth adapter found, or bluetooth adapter is not enabled");
+        builder.setContentIntent(resumePendingIntent);
+        builder.setTicker("Gateblu Error");
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(PERSISTENT_NOTIFICATION_ID, builder.build());
+    }
+
     private void showPersistentNotification() {
         Intent resumeIntent = new Intent(this, GatebluActivity.class);
         resumeIntent.setAction(RESUME);
@@ -219,6 +274,7 @@ public class GatebluApplication extends Application {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
         builder.setSmallIcon(R.drawable.ic_stat_spiral);
+        builder.setColor(getResources().getColor(R.color.primary));
         builder.setContentTitle("Gateblu is running");
         builder.setContentText("running, running, running");
         builder.setContentIntent(resumePendingIntent);

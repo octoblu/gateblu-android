@@ -17,6 +17,7 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.ParcelUuid;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -29,13 +30,15 @@ import java.util.Map;
 import java.util.UUID;
 
 public class NobleService extends IntentService {
-    public static final String TAG = "GatebluService";
+    public static final String TAG = "NobleService";
     protected static final UUID CHARACTERISTIC_UPDATE_NOTIFICATION_DESCRIPTOR_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    public static final String ACTION_NO_BLUETOOTH_ADAPTER_FOUND = "noBluetoothAdapterFound";
 
     private NobleWebSocketServer webSocketServer;
     private Map<String, ScanResult> scanResultMap = new HashMap<>();
     private Map<String, BluetoothGatt> gattMap = new HashMap<>();
     private Map<Integer, BluetoothLeScanner> scannerMap = new HashMap<>();
+    private LocalBroadcastManager localBroadcastManager;
 
     public NobleService() {
         super("NobleService");
@@ -44,6 +47,8 @@ public class NobleService extends IntentService {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
 
         final BluetoothManager bluetoothManager = (BluetoothManager)getSystemService(Context.BLUETOOTH_SERVICE);
         webSocketServer = new NobleWebSocketServer(new InetSocketAddress(0xB1E));
@@ -55,7 +60,7 @@ public class NobleService extends IntentService {
 
                 if (adapter == null || !adapter.isEnabled()) {
                     Log.w(TAG, "No bluetooth adapter found, or bluetooth adapter is not enabled");
-                    Toast.makeText(getApplicationContext(), "Bluetooth must be enabled", Toast.LENGTH_SHORT).show();
+                    localBroadcastManager.sendBroadcast(new Intent(ACTION_NO_BLUETOOTH_ADAPTER_FOUND));
                     return;
                 }
                 BluetoothLeScanner bluetoothLeScanner = adapter.getBluetoothLeScanner();
