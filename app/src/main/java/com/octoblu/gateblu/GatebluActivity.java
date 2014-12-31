@@ -45,9 +45,6 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
 
         gridView.setOnItemClickListener(this);
 
-        ImageView robotImageView = (ImageView) findViewById(R.id.robot_image);
-        robotImageView.setImageResource(getRandomRobotResourceId());
-
         application = (GatebluApplication) getApplication();
         application.on(GatebluApplication.EVENT_DEVICES_UPDATED, new Emitter.Listener() {
             @Override
@@ -139,6 +136,7 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             return;
         }
         if (application.hasNoDevices()) {
+            setRandomRobotImage();
             gridView.setVisibility(View.GONE);
             noDevicesInfoView.setVisibility(View.VISIBLE);
             spinner.setVisibility(View.GONE);
@@ -152,6 +150,11 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         gridView.setAdapter(deviceGridAdapter);
     }
 
+    private void setRandomRobotImage() {
+        ImageView robotImageView = (ImageView) findViewById(R.id.robot_image);
+        robotImageView.setImageResource(getRandomRobotResourceId());
+    }
+
 
     private void showResetGatebluDialog() {
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
@@ -161,7 +164,6 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 application.resetGateblu();
-                refreshDeviceGrid();
             }
         });
         dialogBuilder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

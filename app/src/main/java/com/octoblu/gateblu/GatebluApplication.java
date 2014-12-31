@@ -42,7 +42,6 @@ public class GatebluApplication extends Application {
 
     private final List<WebView> webviews = new ArrayList<>();
     private final List<Device> devices = new ArrayList<>();
-    private Intent meshbluServiceIntent;
 
     private Emitter emitter = new Emitter();
 
@@ -155,21 +154,21 @@ public class GatebluApplication extends Application {
         preferences.commit();
 
         restartMeshbluService();
-
+        emitter.emit(EVENT_DEVICES_UPDATED);
     }
 
     private void restartMeshbluService() {
-        if(meshbluServiceIntent != null){
-            stopService(meshbluServiceIntent);
-        }
         meshbluHasConnected = false;
         connectorsAreRunning = false;
+        fetchedDevices = false;
 
         SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
         String uuid = preferences.getString(UUID, null);
         String token = preferences.getString(TOKEN, null);
+//        uuid = "834d3711-8aef-11e4-b94a-b19d17114b8a";
+//        token = "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi";
 
-        meshbluServiceIntent = new Intent(this, MeshbluService.class);
+        Intent meshbluServiceIntent = new Intent(this, MeshbluService.class);
         meshbluServiceIntent.putExtra(MeshbluService.UUID, uuid);
         meshbluServiceIntent.putExtra(MeshbluService.TOKEN, token);
         startService(meshbluServiceIntent);

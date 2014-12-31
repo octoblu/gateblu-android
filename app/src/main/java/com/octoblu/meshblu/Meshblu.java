@@ -150,6 +150,10 @@ public class Meshblu extends Emitter {
         });
     }
 
+    public void disconnect() {
+        socket.disconnect();
+    }
+
     public String getUuid() {
         return uuid;
     }
@@ -165,5 +169,4 @@ public class Meshblu extends Emitter {
     private void setToken(String token) {
         this.token = token;
     }
-
 }

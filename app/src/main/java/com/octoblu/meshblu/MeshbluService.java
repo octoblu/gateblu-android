@@ -21,22 +21,27 @@ public class MeshbluService extends IntentService{
     public static final String ACTION_READY = "ready";
 
     private LocalBroadcastManager localBroadcastManager;
-    private Meshblu meshblu;
 
     public MeshbluService() {
         super("MeshbluService");
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
+    public void onCreate() {
+        super.onCreate();
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        Log.e(TAG, "onHandleIntent");
 
         String uuid = intent.getStringExtra(UUID);
         String token = intent.getStringExtra(TOKEN);
 
+        final Meshblu meshblu;
         try {
-            meshblu = new Meshblu("834d3711-8aef-11e4-b94a-b19d17114b8a", "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi");
-//            meshblu = new Meshblu(uuid, token);
+            meshblu = new Meshblu(uuid, token);
         } catch (URISyntaxException e) {
             Log.e(TAG, "Failed to initialize meshblu", e);
             return;
@@ -47,15 +52,21 @@ public class MeshbluService extends IntentService{
             public void call(Object... args) {
                 Log.d(TAG, "Connected to Meshblu as: " + meshblu.getUuid() + ":" + meshblu.getToken());
                 JSONObject authCredentials = (JSONObject) args[0];
-                broadcastReady(authCredentials);
-                fetchGateblu(authCredentials);
+                broadcastReady(meshblu, authCredentials);
+                fetchGateblu(meshblu, authCredentials);
             }
         });
 
         meshblu.connect();
     }
 
-    private void broadcastReady(JSONObject authCredentials) {
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.e(TAG, "onDestroy");
+    }
+
+    private void broadcastReady(Meshblu meshblu, JSONObject authCredentials) {
         String uuid;
         String token;
         try {
@@ -72,14 +83,14 @@ public class MeshbluService extends IntentService{
         localBroadcastManager.sendBroadcast(intent);
     }
 
-    private void fetchGateblu(JSONObject gatebluJSON) {
-        meshblu.whoami(gatebluJSON, new Emitter.Listener(){
+    private void fetchGateblu(final Meshblu meshblu, JSONObject gatebluJSON) {
+        meshblu.whoami(gatebluJSON, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
                 try {
                     JSONObject gatebluJSON = (JSONObject) args[0];
                     JSONArray devicesJSON = gatebluJSON.getJSONArray("devices");
-                    broadcastDevicesJSON(devicesJSON);
+                    broadcastDevicesJSON(meshblu, devicesJSON);
                 } catch (JSONException e) {
                     Log.e(TAG, "Error parsing whoami response from Meshblu", e);
                 }
@@ -87,9 +98,10 @@ public class MeshbluService extends IntentService{
         });
     }
 
-    private void broadcastDevicesJSON(JSONArray devicesJSON) {
+    private void broadcastDevicesJSON(Meshblu meshblu, JSONArray devicesJSON) {
         Intent intent = new Intent(ACTION_SEND_DEVICES);
         intent.putExtra("devices", devicesJSON.toString());
         localBroadcastManager.sendBroadcast(intent);
+        meshblu.disconnect();
     }
 }
