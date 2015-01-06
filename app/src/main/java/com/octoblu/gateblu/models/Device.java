@@ -68,7 +68,10 @@ public class Device {
     }
 
     public void update(JSONObject deviceJSON) throws JSONException {
-        this.name  = deviceJSON.getString(NAME);
+        if(deviceJSON.has(NAME)) {
+            this.name  = deviceJSON.getString(NAME);
+        }
+
         this.type  = deviceJSON.getString(TYPE);
     }
 

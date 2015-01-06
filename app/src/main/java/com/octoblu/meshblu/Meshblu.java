@@ -126,7 +126,7 @@ public class Meshblu extends Emitter {
     private void emitRegister() {
         JSONObject registerJSON = new JSONObject();
         try {
-            registerJSON.put("type", "device:gateblu:android");
+            registerJSON.put("type", "device:gateblu");
             registerJSON.put("devices", new JSONArray());
         } catch (JSONException e) {
             Log.e(TAG, "Error emitting register", e);

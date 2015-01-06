@@ -46,6 +46,7 @@ public class GatebluApplication extends Application {
     private final List<Device> devices = new ArrayList<>();
 
     private Emitter emitter = new Emitter();
+    private int uuid;
 
     @Override
     public void onCreate() {
@@ -324,5 +325,16 @@ public class GatebluApplication extends Application {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(PERSISTENT_NOTIFICATION_ID, builder.build());
     }
+
+    public String getToken() {
+        SharedPreferences preferences = getSharedPreferences(GatebluApplication.PREFERENCES_FILE_NAME, 0);
+        return preferences.getString(GatebluApplication.TOKEN, null);
+    }
+
+    public String getUuid() {
+        SharedPreferences preferences = getSharedPreferences(GatebluApplication.PREFERENCES_FILE_NAME, 0);
+        return preferences.getString(GatebluApplication.UUID, null);
+    }
+
     // endregion
 }

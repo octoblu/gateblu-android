@@ -1,18 +1,25 @@
 package com.octoblu.gateblu;
 
 import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
@@ -102,6 +109,9 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             case R.id.action_start_all_connectors:
                 application.turnConnectorsOn();
                 return true;
+            case R.id.action_show_uuid:
+                showUuidDialog();
+                return true;
             case R.id.action_reset_gateblu:
                 showResetGatebluDialog();
                 return true;
@@ -172,6 +182,43 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
             }
         });
 
+        AlertDialog alertDialog = dialogBuilder.create();
+        alertDialog.show();
+    }
+
+
+    private void showUuidDialog() {
+        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View uuidDialogView = inflater.inflate(R.layout.uuid_dialog, null);
+        TextView gatebluUuidTextView = (TextView) uuidDialogView.findViewById(R.id.gateblu_uuid);
+        TextView gatebluTokenTextView = (TextView) uuidDialogView.findViewById(R.id.gateblu_token);
+
+        gatebluUuidTextView.setText(application.getUuid());
+        gatebluTokenTextView.setText(application.getToken());
+
+        uuidDialogView.findViewById(R.id.action_copy_uuid).setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Toast.makeText(getApplication(), "UUID copied to clipboard", Toast.LENGTH_SHORT).show();
+                ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                clipboardManager.setPrimaryClip(ClipData.newPlainText(application.UUID, application.getUuid()));
+                return false;
+            }
+        });
+        uuidDialogView.findViewById(R.id.action_copy_token).setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Toast.makeText(getApplication(), "Token copied to clipboard", Toast.LENGTH_SHORT).show();
+                ClipboardManager clipboardManager = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                clipboardManager.setPrimaryClip(ClipData.newPlainText(application.TOKEN, application.getToken()));
+                return false;
+            }
+        });
+
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+        dialogBuilder.setView(uuidDialogView);
+        dialogBuilder.setTitle("Meshblu Credentials");
+        dialogBuilder.setNegativeButton("Close", null);
         AlertDialog alertDialog = dialogBuilder.create();
         alertDialog.show();
     }
