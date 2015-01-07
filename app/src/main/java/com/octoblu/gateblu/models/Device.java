@@ -30,6 +30,26 @@ public class Device {
         this.onOnlineChangedListeners = new ArrayList<OnlineChangedListener>();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Device device = (Device) o;
+
+        if (token != null ? !token.equals(device.token) : device.token != null) return false;
+        if (uuid != null ? !uuid.equals(device.uuid) : device.uuid != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = uuid != null ? uuid.hashCode() : 0;
+        result = 31 * result + (token != null ? token.hashCode() : 0);
+        return result;
+    }
+
     public String getName() {
         return name;
     }
@@ -85,6 +105,10 @@ public class Device {
 
     public String getConnector() {
         return connector;
+    }
+
+    public static boolean areTheSame(List<Device> theseDevices, List<Device> thoseDevices) {
+        return theseDevices.containsAll(thoseDevices) && thoseDevices.containsAll(theseDevices);
     }
 
     public static List<Device> fromJSONArray(JSONArray devicesJSON) throws JSONException {

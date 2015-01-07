@@ -102,6 +102,7 @@ public class MeshbluService extends IntentService{
                         JSONObject gatebluJSON = (JSONObject) args[0];
                         JSONArray devicesJSON = gatebluJSON.getJSONArray("devices");
                         broadcastDevicesJSON(meshblu, devicesJSON);
+                        subscribeToDevices(meshblu, devicesJSON);
                         fetchDevices(meshblu, devicesJSON);
                     } catch (JSONException e) {
                         Log.e(TAG, "Error parsing whoami response from Meshblu", e);
@@ -140,6 +141,14 @@ public class MeshbluService extends IntentService{
                     }
                 }
             });
+        }
+    }
+
+    private void subscribeToDevices(Meshblu meshblu, JSONArray devicesJSON) throws JSONException {
+        for(int i=0; i< devicesJSON.length(); i++){
+            JSONObject deviceJSON = null;
+            deviceJSON = devicesJSON.getJSONObject(i);
+            meshblu.subscribe(deviceJSON);
         }
     }
 }

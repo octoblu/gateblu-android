@@ -191,13 +191,32 @@ public class GatebluApplication extends Application {
             return;
         }
 
-        this.devices.clear();
-        this.devices.addAll(devices);
         fetchedDevices = true;
+        updateDevices(devices);
+    }
+
+    private void updateDevices(List<Device> devices) {
+        List<Device> newDevices = new ArrayList<>();
+
+        for(Device device : devices) {
+            Device oldDevice = getDevice(device.getUuid());
+            if(oldDevice != null){
+                newDevices.add(oldDevice);
+            } else {
+                newDevices.add(device);
+            }
+        }
+
+        boolean areDifferent = !Device.areTheSame(newDevices, this.devices);
+
+        this.devices.clear();
+        this.devices.addAll(newDevices);
 
         emitDevicesUpdated();
 
-        restartAllConnectors();
+        if(areDifferent){
+            restartAllConnectors();
+        }
     }
 
     private void emitDevicesUpdated() {
@@ -250,8 +269,8 @@ public class GatebluApplication extends Application {
         SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
         String uuid = preferences.getString(UUID, null);
         String token = preferences.getString(TOKEN, null);
-//        uuid = "834d3711-8aef-11e4-b94a-b19d17114b8a";
-//        token = "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi";
+        uuid = "834d3711-8aef-11e4-b94a-b19d17114b8a";
+        token = "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi";
 
         Intent meshbluServiceIntent = new Intent(this, MeshbluService.class);
         meshbluServiceIntent.putExtra(MeshbluService.UUID, uuid);

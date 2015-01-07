@@ -176,6 +176,14 @@ public class Meshblu extends Emitter {
         });
     }
 
+    public void subscribe(JSONObject deviceJSON) throws JSONException {
+        JSONObject queryJSON = new JSONObject();
+        queryJSON.put(UUID, deviceJSON.getString(UUID));
+        queryJSON.put(TOKEN, deviceJSON.getString(TOKEN));
+        socket.emit("subscribe", new JSONObject[]{queryJSON});
+    }
+
+
     public void disconnect() {
         socket.disconnect();
     }
@@ -195,6 +203,5 @@ public class Meshblu extends Emitter {
     private void setToken(String token) {
         this.token = token;
     }
-
 
 }
