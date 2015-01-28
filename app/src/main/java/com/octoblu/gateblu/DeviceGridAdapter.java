@@ -76,6 +76,11 @@ public class DeviceGridAdapter extends BaseAdapter {
         return convertView;
     }
 
+    @Override
+    public boolean isEnabled(int position) {
+        return false;
+    }
+
     private static class ViewHolder {
         TextView name;
         ImageView image;

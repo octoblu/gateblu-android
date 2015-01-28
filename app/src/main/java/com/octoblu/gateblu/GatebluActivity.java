@@ -24,7 +24,7 @@ import android.widget.Toast;
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
 
-public class GatebluActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
+public class GatebluActivity extends ActionBarActivity {
     public static final String TAG = "Gateblu:GatebluActivity";
 
     //region Variables
@@ -49,8 +49,6 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         noDevicesInfoView = (LinearLayout) findViewById(R.id.no_devices_info);
         spinner = (LinearLayout) findViewById(R.id.loading_spinner);
         spinnerText = (TextView) findViewById(R.id.loading_spinner_text);
-
-        gridView.setOnItemClickListener(this);
 
         application = (GatebluApplication) getApplication();
         application.on(GatebluApplication.EVENT_DEVICES_UPDATED, new Emitter.Listener() {
@@ -120,14 +118,6 @@ public class GatebluActivity extends ActionBarActivity implements AdapterView.On
         return super.onOptionsItemSelected(item);
     }
     //endregion
-
-    // region Event Listeners
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Device device = deviceGridAdapter.getItem(position);
-        device.toggle();
-    }
-    // endregion
 
     // region View Helpers
     private void refreshDeviceGrid() {
