@@ -18,7 +18,6 @@ import android.webkit.WebView;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
-import com.octoblu.meshblu.MeshbluService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -28,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GatebluApplication extends Application {
-    public static final String TAG = "Gateblu:GatebluApplication";
+    public static final String TAG = "GatebluApplication";
     public static final String PREFERENCES_FILE_NAME = "meshblu_preferences";
     public static final String UUID = "uuid";
     public static final String TOKEN = "token";
@@ -36,11 +35,9 @@ public class GatebluApplication extends Application {
     public static final String ACTION_STOP_CONNECTORS = "stopConnectors";
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
-    public static final String RUN_CONNECTORS = "runConnectors";
 
     private boolean meshbluHasConnected = false;
     private boolean fetchedDevices      = false;
-    private boolean connectorsAreRunning = false;
 
     private final List<WebView> webviews = new ArrayList<>();
     private final List<Device> devices = new ArrayList<>();
@@ -51,8 +48,9 @@ public class GatebluApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("Gateblu:GatebluApplication", "onCreate");
+        Log.d(TAG, "onCreate");
 
+        WebView.setWebContentsDebuggingEnabled(true);
         java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
         java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
 
@@ -63,26 +61,6 @@ public class GatebluApplication extends Application {
         startService(notificationDismissalService);
 
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
-        localBroadcastManager.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onReceiveDevicesJSON(intent);
-            }
-        }, new IntentFilter(MeshbluService.ACTION_SEND_DEVICES));
-
-        localBroadcastManager.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onReceiveDeviceJSON(intent);
-            }
-        }, new IntentFilter(MeshbluService.ACTION_SEND_DEVICE));
-
-        localBroadcastManager.registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onMeshbluReady(intent);
-            }
-        }, new IntentFilter(MeshbluService.ACTION_READY));
 
         localBroadcastManager.registerReceiver(new BroadcastReceiver() {
             @Override
@@ -90,14 +68,6 @@ public class GatebluApplication extends Application {
                 showNoBluetoothAdapterFoundNotification();
             }
         }, new IntentFilter(NobleService.ACTION_NO_BLUETOOTH_ADAPTER_FOUND));
-
-        registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.d(TAG, "onReceive: " + ACTION_STOP_CONNECTORS);
-                turnConnectorsOff();
-            }
-        }, new IntentFilter(ACTION_STOP_CONNECTORS));
 
         restartMeshbluService();
     }
@@ -117,10 +87,6 @@ public class GatebluApplication extends Application {
     }
 
     // region State Indicators
-    public boolean areConnectorsRunning(){
-        return connectorsAreRunning;
-    }
-
     public boolean hasFetchedDevices() {
         return fetchedDevices;
     }
@@ -132,11 +98,6 @@ public class GatebluApplication extends Application {
     public boolean hasNoDevices() {
         return devices.size() == 0;
     }
-
-    public boolean shouldRunConnectors() {
-        SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
-        return preferences.getBoolean(RUN_CONNECTORS, true);
-    }
     // endregion
 
     // region Event Listeners
@@ -146,14 +107,6 @@ public class GatebluApplication extends Application {
 
     public void off() {
         emitter.off();
-    }
-
-    private void onMeshbluReady(Intent intent) {
-        meshbluHasConnected = true;
-        SharedPreferences.Editor preferences = getPreferencesEditor();
-        preferences.putString(UUID, intent.getStringExtra(MeshbluService.UUID));
-        preferences.putString(TOKEN, intent.getStringExtra(MeshbluService.TOKEN));
-        preferences.commit();
     }
 
     private SharedPreferences.Editor getPreferencesEditor() {
@@ -240,10 +193,6 @@ public class GatebluApplication extends Application {
     public void restartAllConnectors() {
         stopAllConnectors(); // For safety
 
-        if(!shouldRunConnectors()){
-            return;
-        }
-
         for (Device device : devices) {
             Log.d(TAG, "Starting up a: " + device.getConnector());
             WebView webView = new WebView(this);
@@ -251,45 +200,24 @@ public class GatebluApplication extends Application {
             settings.setJavaScriptEnabled(true);
             settings.setAllowFileAccess(true);
             settings.setAllowFileAccessFromFileURLs(true);
-            webView.loadUrl("file:///android_asset/www/gateblu.html");
+            webView.loadUrl("file:///android_asset/www/device.html");
             webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\", connector: \"" + device.getConnector() + "\"};", new Util.IgnoreReturnValue());
             webviews.add(webView);
         }
 
         showPersistentNotification();
-        connectorsAreRunning = true;
         emitDevicesUpdated();
     }
 
     private void restartMeshbluService() {
-        meshbluHasConnected = false;
-        connectorsAreRunning = false;
-        fetchedDevices = false;
-
         SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
         String uuid = preferences.getString(UUID, null);
         String token = preferences.getString(TOKEN, null);
-        uuid = "834d3711-8aef-11e4-b94a-b19d17114b8a";
-        token = "0ab9dwv0vgkdwjyvinx8c59a5h8mpldi";
 
-        Intent meshbluServiceIntent = new Intent(this, MeshbluService.class);
-        meshbluServiceIntent.putExtra(MeshbluService.UUID, uuid);
-        meshbluServiceIntent.putExtra(MeshbluService.TOKEN, token);
-        startService(meshbluServiceIntent);
-    }
-
-    public void turnConnectorsOff() {
-        SharedPreferences.Editor editor = getPreferencesEditor();
-        editor.putBoolean(RUN_CONNECTORS, false);
-        editor.apply();
-        stopAllConnectors();
-    }
-
-    public void turnConnectorsOn() {
-        SharedPreferences.Editor editor = getPreferencesEditor();
-        editor.putBoolean(RUN_CONNECTORS, true);
-        editor.apply();
-        restartAllConnectors();
+        uuid = "eaed33d7-c723-47dd-9f9a-e70fb45b55d8";
+        token = "588e19e90143c8ecf990c0c843f3a811a829dea4";
+        Gateblu gateblu = new Gateblu(uuid, token, this);
+        gateblu.run();
     }
 
     public void stopAllConnectors() {
@@ -301,7 +229,6 @@ public class GatebluApplication extends Application {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancelAll();
 
-        connectorsAreRunning = false;
         emitDevicesUpdated();
     }
     // endregion

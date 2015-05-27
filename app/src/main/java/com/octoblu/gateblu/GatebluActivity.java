@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,7 +25,7 @@ import android.widget.Toast;
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
 
-public class GatebluActivity extends ActionBarActivity {
+public class GatebluActivity extends AppCompatActivity {
     public static final String TAG = "Gateblu:GatebluActivity";
 
     //region Variables
@@ -93,8 +94,6 @@ public class GatebluActivity extends ActionBarActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.action_stop_all_connectors).setVisible(application.areConnectorsRunning());
-        menu.findItem(R.id.action_start_all_connectors).setVisible(!application.areConnectorsRunning());
         return true;
     }
 
@@ -102,10 +101,8 @@ public class GatebluActivity extends ActionBarActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.action_stop_all_connectors:
-                application.turnConnectorsOff();
                 return true;
             case R.id.action_start_all_connectors:
-                application.turnConnectorsOn();
                 return true;
             case R.id.action_show_uuid:
                 showUuidDialog();

@@ -1,0 +1,34 @@
+<html>
+    <script>
+        var JavaScript = {
+          load: function(src, callback) {
+            var script = document.createElement('script'),
+                loaded;
+            script.setAttribute('src', src);
+            if (callback) {
+              script.onreadystatechange = script.onload = function() {
+                if (!loaded) {
+                  callback();
+                }
+                loaded = true;
+              };
+            }
+            document.getElementsByTagName('head')[0].appendChild(script);
+          }
+        };
+
+        var connectorPath = "../connectors/" + meshbluDevice.connector + ".js";
+        JavaScript.load(connectorPath, function(){
+            console.log('Started');
+            var bean = new Connector({
+               server: "meshblu.octoblu.com",
+               port: 80,
+               uuid: meshbluDevice.uuid,
+               token: meshbluDevice.token
+            });
+        });
+    </script>
+    <body>
+        <h1>HELLO!!!!!</h1>
+    </body>
+</html>

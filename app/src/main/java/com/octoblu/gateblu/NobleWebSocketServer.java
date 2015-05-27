@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 public class NobleWebSocketServer extends WebSocketServer {
-    private final static String TAG = "gateblu:NobleWebSocketServer";
+    private final static String TAG = "NobleWebSocketServer";
     private List<OnScanListener> onScanListeners = new ArrayList<>();
     private List<OnStopScanListener> onStopScanListeners = new ArrayList<>();
     private List<ConnectListener> connectListeners = new ArrayList<>();
