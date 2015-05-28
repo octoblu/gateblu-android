@@ -18,6 +18,7 @@
         };
 
         var connectorPath = "../connectors/" + meshbluDevice.connector + ".js";
+
         JavaScript.load(connectorPath, function(){
             console.log('Started');
             var bean = new Connector({
