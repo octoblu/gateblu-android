@@ -18,13 +18,10 @@
         };
 
         var connectorUrl = "https://cdn.octoblu.com/js/" + connectorName + "/latest/" + connectorName + ".js";
-        connectorUrl = "http://192.168.100.12:3000/js/" + connectorName + "/latest/" + connectorName + ".js";
+        // connectorUrl = "http://192.168.100.12:3000/js/" + connectorName + "/latest/" + connectorName + ".js";
 
         JavaScript.load(connectorUrl, function(){
-            setTimeout(function(){
-              debugger;
-              window.connector = new Connector(meshbluJSON);
-            }, 15000);
+          window.connector = new Connector(meshbluJSON);
         });
     </script>
     <body>

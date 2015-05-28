@@ -52,7 +52,6 @@ public class WebViewDeviceManager implements DeviceManager {
                 webView.loadUrl("file:///android_asset/www/device.html");
                 webView.evaluateJavascript("window.connectorName = \"" + connectorName + "\"", new Util.IgnoreReturnValue());
                 webView.evaluateJavascript("window.meshbluJSON = {uuid: \"" + uuid + "\", token: \"" + token + "\"};", new Util.IgnoreReturnValue());
-                webView.evaluateJavascript("localStorage.setItem('debug', '*')", new Util.IgnoreReturnValue());
 
                 devices.add(webView);
             }
