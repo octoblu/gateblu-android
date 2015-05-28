@@ -2,10 +2,10 @@ package com.octoblu.gateblu;
 
 import android.support.test.runner.AndroidJUnit4;
 import android.test.AndroidTestCase;
-import android.util.Log;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -102,22 +102,22 @@ public class DeviceManagerServerTest extends AndroidTestCase {
         public boolean addDeviceCalled = false;
 
         @Override
-        public void addDevice() {
+        public void addDevice(JSONObject data) {
             this.addDeviceCalled = true;
         }
 
         @Override
-        public void removeDevice() {
+        public void removeDevice(JSONObject data) {
 
         }
 
         @Override
-        public void startDevice() {
+        public void startDevice(JSONObject data) {
 
         }
 
         @Override
-        public void stopDevice() {
+        public void stopDevice(JSONObject data) {
 
         }
     }

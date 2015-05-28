@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Handler;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -44,6 +45,7 @@ public class GatebluApplication extends Application {
 
     private Emitter emitter = new Emitter();
     private int uuid;
+    private Handler uiThreadHandler;
 
     @Override
     public void onCreate() {
@@ -53,6 +55,8 @@ public class GatebluApplication extends Application {
         WebView.setWebContentsDebuggingEnabled(true);
         java.lang.System.setProperty("java.net.preferIPv6Addresses", "false");
         java.lang.System.setProperty("java.net.preferIPv4Stack", "true");
+
+        uiThreadHandler = new Handler();
 
         Intent nobleServiceIntent = new Intent(this, NobleService.class);
         startService(nobleServiceIntent);
@@ -214,9 +218,9 @@ public class GatebluApplication extends Application {
         String uuid = preferences.getString(UUID, null);
         String token = preferences.getString(TOKEN, null);
 
-        uuid = "eaed33d7-c723-47dd-9f9a-e70fb45b55d8";
-        token = "588e19e90143c8ecf990c0c843f3a811a829dea4";
-        Gateblu gateblu = new Gateblu(uuid, token, this);
+        uuid = "14cb27b0-883d-4b2f-bc0b-b0c66c623954";
+        token = "3401bcac948f8a7ec765357b42d12339b325ce24";
+        Gateblu gateblu = new Gateblu(uuid, token, this, uiThreadHandler);
         gateblu.run();
     }
 

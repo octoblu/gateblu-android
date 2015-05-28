@@ -17,16 +17,14 @@
           }
         };
 
-        var connectorPath = "../connectors/" + meshbluDevice.connector + ".js";
+        var connectorUrl = "https://cdn.octoblu.com/js/" + connectorName + "/latest/" + connectorName + ".js";
+        connectorUrl = "http://192.168.100.12:3000/js/" + connectorName + "/latest/" + connectorName + ".js";
 
-        JavaScript.load(connectorPath, function(){
-            console.log('Started');
-            var bean = new Connector({
-               server: "meshblu.octoblu.com",
-               port: 80,
-               uuid: meshbluDevice.uuid,
-               token: meshbluDevice.token
-            });
+        JavaScript.load(connectorUrl, function(){
+            setTimeout(function(){
+              debugger;
+              window.connector = new Connector(meshbluJSON);
+            }, 15000);
         });
     </script>
     <body>

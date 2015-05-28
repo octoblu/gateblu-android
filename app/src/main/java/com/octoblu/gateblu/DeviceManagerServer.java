@@ -34,11 +34,14 @@ public class DeviceManagerServer extends WebSocketServer {
     @Override
     public void onMessage(WebSocket conn, String message) {
         Log.i(TAG, "onMessage:" + message);
-        String action, messageId;
+        String action;
+        String messageId;
+        JSONObject data;
         try {
             JSONObject jsonObject = new JSONObject(message);
             action = jsonObject.getString("action");
             messageId = jsonObject.getString("id");
+            data = jsonObject.getJSONObject("data");
         } catch (JSONException e) {
             Log.e(TAG, "onMessage JSONException", e);
             return;
@@ -46,16 +49,16 @@ public class DeviceManagerServer extends WebSocketServer {
 
         switch (action) {
             case "addDevice":
-                deviceManager.addDevice();
+                deviceManager.addDevice(data);
                 break;
             case "removeDevice":
-                deviceManager.removeDevice();
+                deviceManager.removeDevice(data);
                 break;
             case "startDevice":
-                deviceManager.startDevice();
+                deviceManager.startDevice(data);
                 break;
             case "stopDevice":
-                deviceManager.stopDevice();
+                deviceManager.stopDevice(data);
                 break;
         }
 
