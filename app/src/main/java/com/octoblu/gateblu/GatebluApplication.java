@@ -8,8 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -44,8 +42,8 @@ public class GatebluApplication extends Application {
     private final List<Device> devices = new ArrayList<>();
 
     private Emitter emitter = new Emitter();
-    private int uuid;
     private Handler uiThreadHandler;
+    private Gateblu gateblu;
 
     @Override
     public void onCreate() {
@@ -73,7 +71,7 @@ public class GatebluApplication extends Application {
             }
         }, new IntentFilter(NobleService.ACTION_NO_BLUETOOTH_ADAPTER_FOUND));
 
-        restartMeshbluService();
+        restartGateblu();
     }
 
     public List<Device> getDevices() {
@@ -116,124 +114,30 @@ public class GatebluApplication extends Application {
     private SharedPreferences.Editor getPreferencesEditor() {
         return getSharedPreferences(PREFERENCES_FILE_NAME, 0).edit();
     }
-
-    private void onReceiveDeviceJSON(Intent intent) {
-        try {
-            JSONObject deviceJSON = new JSONObject(intent.getStringExtra("device"));
-            Log.i(TAG, "onReceiveDeviceJSON: " + deviceJSON.toString());
-
-            String uuid = deviceJSON.getString(UUID);
-            Device device = getDevice(uuid);
-            if(device == null){
-                return;
-            }
-
-            device.update(deviceJSON);
-            emitDevicesUpdated();
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON from intent", e);
-            return;
-        }
-    }
-
-    public void onReceiveDevicesJSON(Intent intent) {
-        List<Device> devices;
-
-        try {
-            JSONArray devicesJSON = new JSONArray(intent.getStringExtra("devices"));
-            devices = Device.fromJSONArray(devicesJSON);
-            Log.d(TAG, "onReceiveDevicesJSON: " + devicesJSON);
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing JSON from intent", e);
-            return;
-        }
-
-        fetchedDevices = true;
-        updateDevices(devices);
-    }
-
-    private void updateDevices(List<Device> devices) {
-        List<Device> newDevices = new ArrayList<>();
-
-        for(Device device : devices) {
-            Device oldDevice = getDevice(device.getUuid());
-            if(oldDevice != null){
-                newDevices.add(oldDevice);
-            } else {
-                newDevices.add(device);
-            }
-        }
-
-        boolean areDifferent = !Device.areTheSame(newDevices, this.devices);
-
-        this.devices.clear();
-        this.devices.addAll(newDevices);
-
-        emitDevicesUpdated();
-
-        if(areDifferent){
-            restartAllConnectors();
-        }
-    }
-
-    private void emitDevicesUpdated() {
-        emitter.emit(EVENT_DEVICES_UPDATED);
-    }
     // endregion
 
     // region Actions
     public void resetGateblu() {
-        stopAllConnectors();
-        devices.clear();
-
         SharedPreferences.Editor preferences = getPreferencesEditor();
         preferences.clear();
+        preferences.putString(UUID, "14cb27b0-883d-4b2f-bc0b-b0c66c623954");
+        preferences.putString(TOKEN, "3401bcac948f8a7ec765357b42d12339b325ce24");
         preferences.commit();
 
-        restartMeshbluService();
-        emitDevicesUpdated();
+        restartGateblu();
     }
 
-    public void restartAllConnectors() {
-        stopAllConnectors(); // For safety
-
-        for (Device device : devices) {
-            Log.d(TAG, "Starting up a: " + device.getConnector());
-            WebView webView = new WebView(this);
-            WebSettings settings = webView.getSettings();
-            settings.setJavaScriptEnabled(true);
-            settings.setAllowFileAccess(true);
-            settings.setAllowFileAccessFromFileURLs(true);
-            webView.loadUrl("file:///android_asset/www/device.html");
-            webView.evaluateJavascript("window.meshbluDevice = {uuid: \"" + device.getUuid() + "\", token: \"" + device.getToken() + "\", connector: \"" + device.getConnector() + "\"};", new Util.IgnoreReturnValue());
-            webviews.add(webView);
+    private void restartGateblu() {
+        if(gateblu != null) {
+            gateblu.stop();
         }
 
-        showPersistentNotification();
-        emitDevicesUpdated();
-    }
-
-    private void restartMeshbluService() {
         SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
         String uuid = preferences.getString(UUID, null);
         String token = preferences.getString(TOKEN, null);
 
-        uuid = "14cb27b0-883d-4b2f-bc0b-b0c66c623954";
-        token = "3401bcac948f8a7ec765357b42d12339b325ce24";
-        Gateblu gateblu = new Gateblu(uuid, token, this, uiThreadHandler);
-        gateblu.run();
-    }
-
-    public void stopAllConnectors() {
-        for(WebView webView : webviews) {
-            webView.destroy();
-        }
-        webviews.clear();
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.cancelAll();
-
-        emitDevicesUpdated();
+        gateblu = new Gateblu(uuid, token, this, uiThreadHandler);
+        gateblu.restart();
     }
     // endregion
 

@@ -7,4 +7,6 @@ public interface DeviceManager {
     void removeDevice(JSONObject data);
     void startDevice(JSONObject data);
     void stopDevice(JSONObject data);
+
+    void stopAll();
 }

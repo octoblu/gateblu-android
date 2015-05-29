@@ -8,6 +8,7 @@ import org.java_websocket.server.WebSocketServer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
@@ -77,6 +78,18 @@ public class DeviceManagerServer extends WebSocketServer {
             responseJSON.put(key, value);
         } catch (JSONException e) {
             Log.e(TAG, "JSONException", e);
+        }
+    }
+
+    @Override
+    public void stop() {
+        deviceManager.stopAll();
+        try {
+            super.stop();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }
