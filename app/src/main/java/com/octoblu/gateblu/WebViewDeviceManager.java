@@ -37,6 +37,11 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
     }
 
     @Override
+    public boolean hasNoDevices() {
+        return devicesMap.isEmpty();
+    }
+
+    @Override
     public void addDevice(final JSONObject data) {
         Log.i(TAG, "addDevice: " + data.toString());
 
@@ -49,6 +54,7 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
         }
 
         devicesMap.put(device.getUuid(), device);
+        emit(CONFIG);
     }
 
     @Override
@@ -62,11 +68,16 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
             return;
         }
 
+        removeDevice(uuid);
+    }
+
+    private void removeDevice(String uuid) {
         WebViewDevice device = devicesMap.remove(uuid);
         if(device == null) {
             return;
         }
         device.stop();
+        emit(CONFIG);
     }
 
     @Override
@@ -84,6 +95,7 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
             @Override
             public void run() {
                 devicesMap.get(uuid).start();
+                emit(CONFIG);
             }
         });
     }
@@ -106,14 +118,15 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
             @Override
             public void run() {
                 devicesMap.get(uuid).stop();
+                emit(CONFIG);
             }
         });
     }
 
     @Override
-    public void stopAll() {
+    public void removeAll() {
         for(String uuid : devicesMap.keySet()) {
-            stopDevice(uuid);
+            removeDevice(uuid);
         }
         devicesMap.clear();
     }

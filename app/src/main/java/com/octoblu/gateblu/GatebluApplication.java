@@ -97,7 +97,7 @@ public class GatebluApplication extends Application {
     }
 
     public boolean hasNoDevices() {
-        return devices.size() == 0;
+        return gateblu.hasNoDevices();
     }
     // endregion
 

@@ -47,6 +47,10 @@ public class Gateblu extends Emitter {
         return deviceManager.isReady();
     }
 
+    public boolean hasNoDevices() {
+        return deviceManager.hasNoDevices();
+    }
+
     public void restart(){
         stop();
         start();

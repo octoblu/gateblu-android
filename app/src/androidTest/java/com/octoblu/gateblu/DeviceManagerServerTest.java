@@ -122,7 +122,7 @@ public class DeviceManagerServerTest extends AndroidTestCase {
         }
 
         @Override
-        public void stopAll() {
+        public void removeAll() {
 
         }
 

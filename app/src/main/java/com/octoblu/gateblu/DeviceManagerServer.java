@@ -89,7 +89,7 @@ public class DeviceManagerServer extends WebSocketServer {
 
     @Override
     public void stop() {
-        deviceManager.stopAll();
+        deviceManager.removeAll();
         try {
             super.stop();
         } catch (IOException e) {

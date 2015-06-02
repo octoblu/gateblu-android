@@ -14,5 +14,7 @@ public interface DeviceManager {
 
     void stopDevice(JSONObject data);
 
-    void stopAll();
+    void removeAll();
+
+    boolean hasNoDevices();
 }
