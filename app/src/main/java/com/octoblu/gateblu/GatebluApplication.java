@@ -30,7 +30,7 @@ public class GatebluApplication extends Application {
     public static final String PREFERENCES_FILE_NAME = "meshblu_preferences";
     public static final String UUID = "uuid";
     public static final String TOKEN = "token";
-    public static final String EVENT_DEVICES_UPDATED = "devicesUpdated";
+    public static final String CONFIG = "config";
     public static final String ACTION_STOP_CONNECTORS = "stopConnectors";
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
@@ -63,7 +63,6 @@ public class GatebluApplication extends Application {
         startService(notificationDismissalService);
 
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
-
         localBroadcastManager.registerReceiver(new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -130,13 +129,21 @@ public class GatebluApplication extends Application {
     private void restartGateblu() {
         if(gateblu != null) {
             gateblu.stop();
+            gateblu.off();
         }
 
         SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
         String uuid = preferences.getString(UUID, null);
         String token = preferences.getString(TOKEN, null);
 
+
         gateblu = new Gateblu(uuid, token, this, uiThreadHandler);
+        gateblu.on(Gateblu.CONFIG, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                emitter.emit(CONFIG, args);
+            }
+        });
         gateblu.restart();
     }
     // endregion
@@ -188,6 +195,10 @@ public class GatebluApplication extends Application {
     public String getUuid() {
         SharedPreferences preferences = getSharedPreferences(GatebluApplication.PREFERENCES_FILE_NAME, 0);
         return preferences.getString(GatebluApplication.UUID, null);
+    }
+
+    public boolean isLoading() {
+        return !gateblu.isReady();
     }
 
     // endregion

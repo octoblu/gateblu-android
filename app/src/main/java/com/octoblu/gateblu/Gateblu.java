@@ -6,10 +6,13 @@ import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import com.github.nkzawa.emitter.Emitter;
+
 import java.net.UnknownHostException;
 
-public class Gateblu {
+public class Gateblu extends Emitter {
     public static final String TAG = "Gateblu";
+    public static final String CONFIG = "config";
     private final WebViewDeviceManager deviceManager;
     private final Context context;
     private WebView webView;
@@ -21,6 +24,12 @@ public class Gateblu {
         this.token = token;
         this.context = context;
         this.deviceManager = new WebViewDeviceManager(context, uiThreadHandler);
+        this.deviceManager.on(DeviceManager.CONFIG, new Listener() {
+            @Override
+            public void call(Object... args) {
+                Gateblu.this.emit(CONFIG, args);
+            }
+        });
     }
 
     private WebView buildWebView(Context context) {
@@ -32,6 +41,10 @@ public class Gateblu {
         settings.setAllowFileAccess(true);
         settings.setAllowFileAccessFromFileURLs(true);
         return webView;
+    }
+
+    public boolean isReady(){
+        return deviceManager.isReady();
     }
 
     public void restart(){

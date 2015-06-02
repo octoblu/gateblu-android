@@ -4,22 +4,36 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
+import com.github.nkzawa.emitter.Emitter;
+
 import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.MissingResourceException;
 
-public class WebViewDeviceManager implements DeviceManager {
+public class WebViewDeviceManager extends Emitter implements DeviceManager {
 
     public static final String TAG = "WebViewDeviceManager";
     private final Context context;
     private final HashMap<String, WebViewDevice> devicesMap;
     private final Handler uiThreadHandler;
+    private boolean ready = false;
 
     public WebViewDeviceManager(Context context, Handler uiThreadHandler) {
         this.context = context;
         this.uiThreadHandler = uiThreadHandler;
         this.devicesMap = new HashMap<>();
+    }
+
+    @Override
+    public boolean isReady() {
+        return ready;
+    }
+
+    @Override
+    public void setReady(boolean ready) {
+        this.ready = ready;
+        emit(CONFIG);
     }
 
     @Override
@@ -103,4 +117,7 @@ public class WebViewDeviceManager implements DeviceManager {
         }
         devicesMap.clear();
     }
+
+
+
 }

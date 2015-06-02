@@ -5,9 +5,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,7 +13,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -23,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.nkzawa.emitter.Emitter;
-import com.octoblu.gateblu.models.Device;
 
 public class GatebluActivity extends AppCompatActivity {
     public static final String TAG = "Gateblu:GatebluActivity";
@@ -34,7 +30,6 @@ public class GatebluActivity extends AppCompatActivity {
     private GridView gridView;
     private LinearLayout noDevicesInfoView;
     private LinearLayout spinner;
-    private TextView spinnerText;
     private GatebluApplication application;
     //endregion
 
@@ -49,14 +44,18 @@ public class GatebluActivity extends AppCompatActivity {
         gridView = (GridView)findViewById(R.id.devices_grid);
         noDevicesInfoView = (LinearLayout) findViewById(R.id.no_devices_info);
         spinner = (LinearLayout) findViewById(R.id.loading_spinner);
-        spinnerText = (TextView) findViewById(R.id.loading_spinner_text);
 
         application = (GatebluApplication) getApplication();
-        application.on(GatebluApplication.EVENT_DEVICES_UPDATED, new Emitter.Listener() {
+        application.on(GatebluApplication.CONFIG, new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                invalidateOptionsMenu();
-                refreshDeviceGrid();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        invalidateOptionsMenu();
+                        refreshDeviceGrid();
+                    }
+                });
             }
         });
 
@@ -118,20 +117,13 @@ public class GatebluActivity extends AppCompatActivity {
 
     // region View Helpers
     private void refreshDeviceGrid() {
-        if(!application.hasMeshbluConnected()){
+        if(application.isLoading()) {
             gridView.setVisibility(View.GONE);
             noDevicesInfoView.setVisibility(View.GONE);
             spinner.setVisibility(View.VISIBLE);
-            spinnerText.setText(R.string.connecting_to_meshblu_header);
             return;
         }
-        if(!application.hasFetchedDevices()) {
-            gridView.setVisibility(View.GONE);
-            noDevicesInfoView.setVisibility(View.GONE);
-            spinner.setVisibility(View.VISIBLE);
-            spinnerText.setText(R.string.fetching_devices_header);
-            return;
-        }
+
         if (application.hasNoDevices()) {
             setRandomRobotImage();
             gridView.setVisibility(View.GONE);
@@ -143,6 +135,7 @@ public class GatebluActivity extends AppCompatActivity {
         gridView.setVisibility(View.VISIBLE);
         noDevicesInfoView.setVisibility(View.GONE);
         spinner.setVisibility(View.GONE);
+
         deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), application.getDevices());
         gridView.setAdapter(deviceGridAdapter);
     }

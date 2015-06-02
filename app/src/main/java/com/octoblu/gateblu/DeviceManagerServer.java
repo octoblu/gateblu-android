@@ -49,6 +49,12 @@ public class DeviceManagerServer extends WebSocketServer {
         }
 
         switch (action) {
+            case "ready":
+                deviceManager.setReady(true);
+                break;
+            case "notready":
+                deviceManager.setReady(false);
+                break;
             case "addDevice":
                 deviceManager.addDevice(data);
                 break;
