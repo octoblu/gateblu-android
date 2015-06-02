@@ -120,5 +120,11 @@ public class DeviceManagerServerTest extends AndroidTestCase {
         public void stopDevice(JSONObject data) {
 
         }
+
+        @Override
+        public void stopAll() {
+
+        }
+
     }
 }

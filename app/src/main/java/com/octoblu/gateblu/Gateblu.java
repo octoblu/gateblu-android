@@ -49,9 +49,9 @@ public class Gateblu {
             return;
         }
 
+        webView.clearCache(true);
         webView.loadUrl("file:///android_asset/www/gateblu.html");
         webView.evaluateJavascript("window.meshbluJSON = {uuid: \"" + uuid + "\", token: \"" + token + "\"};", new Util.IgnoreReturnValue());
-        webView.evaluateJavascript("localStorage.setItem('debug', '*')", new Util.IgnoreReturnValue());
     }
 
     public void stop() {

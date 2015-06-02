@@ -5,9 +5,8 @@ import android.support.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/**
- * Created by octoblu on 5/29/15.
- */
+import java.util.MissingResourceException;
+
 public class SaneJSONObject extends JSONObject {
     public SaneJSONObject() {
         super();
@@ -17,12 +16,20 @@ public class SaneJSONObject extends JSONObject {
         super(jsonData);
     }
 
-    public String getStringOrNull(@Nullable String name){
+    public String getStringOrNull(@Nullable String name) {
         try {
             return this.getString(name);
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    public String getStringOrThrow(@Nullable String name) {
+        String value = getStringOrNull(name);
+        if (value == null) {
+            throw new MissingResourceException("Missing " + name, "WebViewDevice", name);
+        }
+        return value;
     }
 
     public static SaneJSONObject fromJSONObject(JSONObject data) {
