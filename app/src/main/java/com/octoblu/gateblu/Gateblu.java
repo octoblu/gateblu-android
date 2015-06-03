@@ -6,8 +6,17 @@ import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
+
+import org.json.JSONObject;
 
 import java.net.UnknownHostException;
 import java.util.List;
@@ -15,6 +24,7 @@ import java.util.List;
 public class Gateblu extends Emitter {
     public static final String TAG = "Gateblu";
     public static final String CONFIG = "config";
+    public static final String REGISTER = "register";
     private final WebViewDeviceManager deviceManager;
     private final Context context;
     private WebView webView;
@@ -63,6 +73,12 @@ public class Gateblu extends Emitter {
     }
 
     private void start() {
+        if(uuid == null || token == null) {
+            register();
+            return;
+        }
+
+
         try {
             webView = buildWebView(context);
             server = new DeviceManagerServer(deviceManager);
@@ -85,5 +101,27 @@ public class Gateblu extends Emitter {
         if(server != null) {
             server.stop();
         }
+    }
+
+    private void register() {
+        RequestQueue queue = Volley.newRequestQueue(context);
+        String url = "https://meshblu.octoblu.com/devices";
+        SaneJSONObject data = new SaneJSONObject();
+        data.putOrIgnore("type", "device:gateblu");
+
+        JsonObjectRequest registerRequest = new JsonObjectRequest(Request.Method.POST, url, data, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject jsonObject) {
+                emit(REGISTER, jsonObject);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+
+            }
+        });
+
+        queue.add(registerRequest);
+
     }
 }

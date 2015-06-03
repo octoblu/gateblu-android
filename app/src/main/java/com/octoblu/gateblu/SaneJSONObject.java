@@ -33,6 +33,14 @@ public class SaneJSONObject extends JSONObject {
         return value;
     }
 
+    public void putOrIgnore(@Nullable String name, @Nullable String value){
+        try {
+            put(name, value);
+        } catch (JSONException e) {
+            return;
+        }
+    }
+
     public static SaneJSONObject fromJSONObject(JSONObject data) {
         return fromString(data.toString());
     }

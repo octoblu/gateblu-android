@@ -109,8 +109,8 @@ public class GatebluApplication extends Application {
     public void resetGateblu() {
         SharedPreferences.Editor preferences = getPreferencesEditor();
         preferences.clear();
-        preferences.putString(UUID, "14cb27b0-883d-4b2f-bc0b-b0c66c623954");
-        preferences.putString(TOKEN, "3401bcac948f8a7ec765357b42d12339b325ce24");
+//        preferences.putString(UUID, "14cb27b0-883d-4b2f-bc0b-b0c66c623954");
+//        preferences.putString(TOKEN, "3401bcac948f8a7ec765357b42d12339b325ce24");
         preferences.commit();
 
         restartGateblu();
@@ -134,7 +134,32 @@ public class GatebluApplication extends Application {
                 emitter.emit(CONFIG, args);
             }
         });
+        gateblu.on(Gateblu.REGISTER, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject gatebluJSON = (JSONObject) args[0];
+                saveCredentials(SaneJSONObject.fromJSONObject(gatebluJSON));
+            }
+        });
         gateblu.restart();
+    }
+
+    private void saveCredentials(SaneJSONObject gatebluJSON) {
+        String uuid = gatebluJSON.getStringOrNull("uuid");
+        String token = gatebluJSON.getStringOrNull("token");
+
+        SharedPreferences.Editor preferences = getPreferencesEditor();
+        preferences.clear();
+        preferences.putString(UUID, uuid);
+        preferences.putString(TOKEN, token);
+        preferences.commit();
+        uiThreadHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                restartGateblu();
+                emitter.emit(CONFIG);
+            }
+        });
     }
     // endregion
 
