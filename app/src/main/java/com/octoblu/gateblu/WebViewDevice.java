@@ -49,10 +49,10 @@ public class WebViewDevice extends Emitter {
 
     private String parseLogoFromType(String type) {
         if(type == null || type.split(":").length < 2){
-            return null;
+            return "https://ds78apnml6was.cloudfront.net/device/generic.svg";
         }
-        String name = type.split(":")[0];
-        String category = type.split(":")[1];
+        String category = type.split(":")[0];
+        String name = type.split(":")[1];
 
         return "https://ds78apnml6was.cloudfront.net/"+category+"/"+name+".svg";
     }

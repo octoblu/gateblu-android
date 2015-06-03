@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -49,17 +50,17 @@ public class DeviceGridAdapter extends BaseAdapter {
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.device_grid_item, parent, false);
             viewHolder.name  = (TextView) convertView.findViewById(R.id.device_grid_item_name);
-            viewHolder.image = (ImageView) convertView.findViewById(R.id.device_grid_item_image);
+            viewHolder.image = (WebView) convertView.findViewById(R.id.device_grid_item_image_webview);
 
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        int imageID = R.drawable.generic;
-
-        viewHolder.name.setText(device.getName());
-        viewHolder.image.setImageResource(imageID);
+        String name = device.getName();
+        viewHolder.name.setText(name);
+        viewHolder.image.loadUrl(device.getLogo());
+        viewHolder.image.setBackgroundColor(context.getResources().getColor(R.color.background_material_light));
 
         return convertView;
     }
@@ -71,6 +72,6 @@ public class DeviceGridAdapter extends BaseAdapter {
 
     private static class ViewHolder {
         TextView name;
-        ImageView image;
+        WebView image;
     }
 }
