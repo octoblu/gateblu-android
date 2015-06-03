@@ -18,7 +18,6 @@
         };
 
         var connectorUrl = "https://cdn.octoblu.com/js/" + connectorName + "/latest/" + connectorName + ".js";
-        connectorUrl = "http://192.168.1.8:3000/js/" + connectorName + "/latest/" + connectorName + ".js";
 
         JavaScript.load(connectorUrl, function(){
           window.connector = new Connector(meshbluJSON);
