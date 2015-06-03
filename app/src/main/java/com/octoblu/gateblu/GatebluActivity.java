@@ -22,7 +22,7 @@ import android.widget.Toast;
 import com.github.nkzawa.emitter.Emitter;
 
 public class GatebluActivity extends AppCompatActivity {
-    public static final String TAG = "Gateblu:GatebluActivity";
+    public static final String TAG = "GatebluActivity";
 
     //region Variables
     private DeviceGridAdapter deviceGridAdapter;
@@ -99,10 +99,6 @@ public class GatebluActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
-            case R.id.action_stop_all_connectors:
-                return true;
-            case R.id.action_start_all_connectors:
-                return true;
             case R.id.action_show_uuid:
                 showUuidDialog();
                 return true;
@@ -197,7 +193,7 @@ public class GatebluActivity extends AppCompatActivity {
 
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
         dialogBuilder.setView(uuidDialogView);
-        dialogBuilder.setTitle("Meshblu Credentials");
+        dialogBuilder.setTitle("Tap UUID or token to copy.");
         dialogBuilder.setNegativeButton("Close", null);
         AlertDialog alertDialog = dialogBuilder.create();
         alertDialog.show();
