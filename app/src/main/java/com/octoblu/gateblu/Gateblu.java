@@ -7,8 +7,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import com.github.nkzawa.emitter.Emitter;
+import com.octoblu.gateblu.models.Device;
 
 import java.net.UnknownHostException;
+import java.util.List;
 
 public class Gateblu extends Emitter {
     public static final String TAG = "Gateblu";
@@ -49,6 +51,10 @@ public class Gateblu extends Emitter {
 
     public boolean hasNoDevices() {
         return deviceManager.hasNoDevices();
+    }
+
+    public List<Device> getDevices(){
+        return deviceManager.getDevices();
     }
 
     public void restart(){

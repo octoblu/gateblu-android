@@ -1,6 +1,7 @@
 package com.octoblu.gateblu;
 
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,8 +34,12 @@ public class SaneJSONObject extends JSONObject {
     }
 
     public static SaneJSONObject fromJSONObject(JSONObject data) {
+        return fromString(data.toString());
+    }
+
+    public static SaneJSONObject fromString(String data) {
         try {
-            return new SaneJSONObject(data.toString());
+            return new SaneJSONObject(data);
         } catch (JSONException e) {
             return new SaneJSONObject();
         }

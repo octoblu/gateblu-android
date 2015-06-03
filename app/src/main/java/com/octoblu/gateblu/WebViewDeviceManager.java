@@ -5,10 +5,13 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.github.nkzawa.emitter.Emitter;
+import com.octoblu.gateblu.models.Device;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.MissingResourceException;
 
 public class WebViewDeviceManager extends Emitter implements DeviceManager {
@@ -37,6 +40,15 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
     }
 
     @Override
+    public List<Device> getDevices() {
+        List<Device> devices = new ArrayList<>(devicesMap.size());
+        for(WebViewDevice webViewDevice : devicesMap.values()) {
+            devices.add(webViewDevice.toDevice());
+        }
+        return devices;
+    }
+
+    @Override
     public boolean hasNoDevices() {
         return devicesMap.isEmpty();
     }
@@ -53,6 +65,12 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
             return;
         }
 
+        device.on(WebViewDevice.CONFIG, new Listener() {
+            @Override
+            public void call(Object... args) {
+                emit(CONFIG);
+            }
+        });
         devicesMap.put(device.getUuid(), device);
         emit(CONFIG);
     }

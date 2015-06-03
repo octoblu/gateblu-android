@@ -74,17 +74,7 @@ public class GatebluApplication extends Application {
     }
 
     public List<Device> getDevices() {
-        return devices;
-    }
-
-
-    private Device getDevice(String uuid) {
-        for(Device device : devices) {
-            if(device.getUuid().equals(uuid)){
-                return device;
-            }
-        }
-        return null;
+        return gateblu.getDevices();
     }
 
     // region State Indicators

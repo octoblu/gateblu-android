@@ -25,10 +25,7 @@
           window.connector.on('config', function(data){
             ConnectorEventListener.on('config', JSON.stringify(data));
           });
-          setTimeout(function(){
-            debugger;
-            window.connector.run();
-          }, 10000);
+          window.connector.run();
         });
     </script>
     <body>

@@ -56,22 +56,10 @@ public class DeviceGridAdapter extends BaseAdapter {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-
-        int imageID = context.getResources().getIdentifier(device.getImageName(), "drawable",  context.getPackageName());
-        if(imageID == 0){
-            imageID = R.drawable.generic;
-        }
+        int imageID = R.drawable.generic;
 
         viewHolder.name.setText(device.getName());
         viewHolder.image.setImageResource(imageID);
-        viewHolder.image.setAlpha(device.isOnline() ? 1.0f : 0.5f);
-
-        device.setOnOnlineChangedListener(new Device.OnlineChangedListener(){
-            @Override
-            public void onOnlineChanged(){
-                viewHolder.image.setAlpha(device.isOnline() ? 1.0f : 0.5f);
-            }
-        });
 
         return convertView;
     }
