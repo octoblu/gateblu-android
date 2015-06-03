@@ -2,13 +2,9 @@
     <!--<script src="https://cdn.octoblu.com/js/gateblu-websocket/latest/gateblu-websocket.js"></script>-->
     <script src="http://192.168.1.8:3000/js/gateblu-websocket/latest/gateblu-websocket.js"></script>
     <script>
-        setTimeout(function(){
-            debugger;
-            var gateblu = new GatebluWebsocket(meshbluJSON);
-            gateblu.run();
-        }, 10000)
+        var gateblu = new GatebluWebsocket(meshbluJSON);
+        gateblu.run();
     </script>
     <body>
-        <h1>HELLO!!!!!</h1>
     </body>
 </html>

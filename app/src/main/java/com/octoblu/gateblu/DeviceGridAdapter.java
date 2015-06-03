@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
@@ -57,10 +58,17 @@ public class DeviceGridAdapter extends BaseAdapter {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        String name = device.getName();
-        viewHolder.name.setText(name);
-        viewHolder.image.loadUrl(device.getLogo());
+        viewHolder.name.setText(device.getName());
         viewHolder.image.setBackgroundColor(context.getResources().getColor(R.color.background_material_light));
+        viewHolder.image.loadUrl("file:///android_asset/www/device-image.html");
+        if(device.getLogo() != null){
+            viewHolder.image.evaluateJavascript("window.logoUrl = '"+device.getLogo()+"';", new Util.IgnoreReturnValue());
+        }
+
+        WebSettings settings = viewHolder.image.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowFileAccessFromFileURLs(true);
 
         return convertView;
     }

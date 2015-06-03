@@ -9,7 +9,7 @@
     <WebView
         android:id="@+id/device_grid_item_image_webview"
         android:layout_width="160dp"
-        android:layout_height="160dp"/>
+        android:layout_height="160dp" />
 
     <TextView
         android:id="@+id/device_grid_item_name"
