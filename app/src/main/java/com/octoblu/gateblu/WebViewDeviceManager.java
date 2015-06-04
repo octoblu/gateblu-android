@@ -10,22 +10,24 @@ import com.octoblu.gateblu.models.Device;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class WebViewDeviceManager extends Emitter implements DeviceManager {
 
     public static final String TAG = "WebViewDeviceManager";
     private final Context context;
-    private final HashMap<String, WebViewDevice> devicesMap;
+    private final ConcurrentHashMap<String, WebViewDevice> devicesMap;
     private final Handler uiThreadHandler;
     private boolean ready = false;
 
     public WebViewDeviceManager(Context context, Handler uiThreadHandler) {
         this.context = context;
         this.uiThreadHandler = uiThreadHandler;
-        this.devicesMap = new HashMap<>();
+        this.devicesMap = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -42,7 +44,9 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
     @Override
     public List<Device> getDevices() {
         List<Device> devices = new ArrayList<>(devicesMap.size());
-        for(WebViewDevice webViewDevice : devicesMap.values()) {
+
+        Collection<WebViewDevice> webViewDevices = devicesMap.values();
+        for(WebViewDevice webViewDevice : webViewDevices) {
             devices.add(webViewDevice.toDevice());
         }
         return devices;
