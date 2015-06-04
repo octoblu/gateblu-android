@@ -34,12 +34,14 @@ public class GatebluApplication extends Application {
     public static final String ACTION_STOP_CONNECTORS = "stopConnectors";
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
+    private static final String STOPPED = "stopped";
 
-    private boolean meshbluHasConnected = false;
-    private boolean fetchedDevices      = false;
-
-    private final List<WebView> webviews = new ArrayList<>();
-    private final List<Device> devices = new ArrayList<>();
+    public final class STATES {
+        public static final String OFF = "off";
+        public static final String NO_DEVICES = "no-devices";
+        public static final String LOADING = "loading";
+        public static final String READY = "ready";
+    }
 
     private Emitter emitter = new Emitter();
     private Handler uiThreadHandler;
@@ -78,16 +80,26 @@ public class GatebluApplication extends Application {
     }
 
     // region State Indicators
-    public boolean hasFetchedDevices() {
-        return fetchedDevices;
-    }
-
-    public boolean hasMeshbluConnected() {
-        return meshbluHasConnected;
+    public String getState(){
+        if(gateblu == null){
+            return STATES.OFF;
+        }
+        if(gateblu.hasNoDevices()) {
+            return STATES.NO_DEVICES;
+        }
+        if(gateblu.isReady()) {
+            return STATES.READY;
+        }
+        return STATES.LOADING;
     }
 
     public boolean hasNoDevices() {
         return gateblu.hasNoDevices();
+    }
+
+
+    public boolean isLoading() {
+        return !gateblu.isReady();
     }
     // endregion
 
@@ -109,23 +121,25 @@ public class GatebluApplication extends Application {
     public void resetGateblu() {
         SharedPreferences.Editor preferences = getPreferencesEditor();
         preferences.clear();
-//        preferences.putString(UUID, "14cb27b0-883d-4b2f-bc0b-b0c66c623954");
-//        preferences.putString(TOKEN, "3401bcac948f8a7ec765357b42d12339b325ce24");
         preferences.commit();
 
         restartGateblu();
     }
 
-    private void restartGateblu() {
+    public void restartGateblu() {
         if(gateblu != null) {
             gateblu.stop();
             gateblu.off();
+            gateblu = null;
         }
 
         SharedPreferences preferences = getSharedPreferences(PREFERENCES_FILE_NAME, 0);
         String uuid = preferences.getString(UUID, null);
         String token = preferences.getString(TOKEN, null);
-
+        boolean stopped = preferences.getBoolean(STOPPED, false);
+        if(stopped){
+            return;
+        }
 
         gateblu = new Gateblu(uuid, token, this, uiThreadHandler);
         gateblu.on(Gateblu.CONFIG, new Emitter.Listener() {
@@ -142,6 +156,23 @@ public class GatebluApplication extends Application {
             }
         });
         gateblu.restart();
+        emitter.emit(CONFIG);
+    }
+
+    public void start(){
+        SharedPreferences.Editor preferences = getPreferencesEditor();
+        preferences.putBoolean(STOPPED, false);
+        preferences.commit();
+        restartGateblu();
+        emitter.emit(CONFIG);
+    }
+
+    public void stop(){
+        SharedPreferences.Editor preferences = getPreferencesEditor();
+        preferences.putBoolean(STOPPED, true);
+        preferences.commit();
+        restartGateblu();
+        emitter.emit(CONFIG);
     }
 
     private void saveCredentials(SaneJSONObject gatebluJSON) {
@@ -161,6 +192,7 @@ public class GatebluApplication extends Application {
             }
         });
     }
+
     // endregion
 
     // region View Helpers
@@ -210,10 +242,6 @@ public class GatebluApplication extends Application {
     public String getUuid() {
         SharedPreferences preferences = getSharedPreferences(GatebluApplication.PREFERENCES_FILE_NAME, 0);
         return preferences.getString(GatebluApplication.UUID, null);
-    }
-
-    public boolean isLoading() {
-        return !gateblu.isReady();
     }
 
     // endregion

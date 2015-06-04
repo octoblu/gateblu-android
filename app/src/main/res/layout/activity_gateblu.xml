@@ -10,6 +10,31 @@
     android:theme="@style/AppTheme"
     tools:context=".GatebluActivity">
 
+    <LinearLayout
+        android:id="@+id/off_info"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:gravity="bottom|center"
+            android:text="@string/gateblu_is_off_header"
+            android:textColor="#000"
+
+            android:textSize="24sp" />
+        <TextView
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:gravity="top|center"
+            android:text="@string/gateblu_is_off_content"
+            android:textColor="#000"
+            android:textSize="12sp" />
+    </LinearLayout>
+
     <GridView
         android:id="@+id/devices_grid"
         android:layout_width="fill_parent"
@@ -17,14 +42,13 @@
         android:columnWidth="160dp"
         android:numColumns="auto_fit"
         android:layout_weight="1">
-        </GridView>
+    </GridView>
 
     <LinearLayout
         android:id="@+id/no_devices_info"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_weight="1">
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical">
 
         <TextView
             android:layout_width="match_parent"
@@ -43,7 +67,7 @@
         <ImageView
             android:id="@+id/robot_image"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_weight="1"
             android:src="@drawable/robot1"/>
     </LinearLayout>
@@ -51,8 +75,8 @@
     <LinearLayout
         android:id="@+id/loading_spinner"
         android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
 
         <TextView
             android:id="@+id/loading_spinner_text"
@@ -74,5 +98,5 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical|center_horizontal"
             android:layout_weight="1" />
-        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>

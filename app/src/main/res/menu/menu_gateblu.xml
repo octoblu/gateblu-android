@@ -6,4 +6,8 @@
           android:orderInCategory="102" app:showAsAction="never" />
     <item android:id="@+id/action_reset_gateblu" android:title="@string/action_reset_gateblu"
           android:orderInCategory="103" app:showAsAction="never" />
+    <item android:id="@+id/action_stop_gateblu" android:title="@string/action_stop_gateblu"
+          android:orderInCategory="104" app:showAsAction="never" />
+    <item android:id="@+id/action_start_gateblu" android:title="@string/action_start_gateblu"
+        android:orderInCategory="105" app:showAsAction="never" />
 </menu>

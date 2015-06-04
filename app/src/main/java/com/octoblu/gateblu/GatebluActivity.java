@@ -27,9 +27,10 @@ public class GatebluActivity extends AppCompatActivity {
     //region Variables
     private DeviceGridAdapter deviceGridAdapter;
 
-    private GridView gridView;
-    private LinearLayout noDevicesInfoView;
-    private LinearLayout spinner;
+    private GridView devicesGridView;
+    private LinearLayout offView;
+    private LinearLayout noDevicesView;
+    private LinearLayout loadingSpinner;
     private GatebluApplication application;
     //endregion
 
@@ -41,9 +42,10 @@ public class GatebluActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_gateblu);
 
-        gridView = (GridView)findViewById(R.id.devices_grid);
-        noDevicesInfoView = (LinearLayout) findViewById(R.id.no_devices_info);
-        spinner = (LinearLayout) findViewById(R.id.loading_spinner);
+        offView = (LinearLayout) findViewById(R.id.off_info);
+        devicesGridView = (GridView)findViewById(R.id.devices_grid);
+        noDevicesView = (LinearLayout) findViewById(R.id.no_devices_info);
+        loadingSpinner = (LinearLayout) findViewById(R.id.loading_spinner);
 
         application = (GatebluApplication) getApplication();
         application.on(GatebluApplication.CONFIG, new Emitter.Listener() {
@@ -93,6 +95,9 @@ public class GatebluActivity extends AppCompatActivity {
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+        boolean stopped = application.getState() == "off";
+        menu.findItem(R.id.action_stop_gateblu).setVisible(!stopped);
+        menu.findItem(R.id.action_start_gateblu).setVisible(stopped);
         return true;
     }
 
@@ -105,6 +110,12 @@ public class GatebluActivity extends AppCompatActivity {
             case R.id.action_reset_gateblu:
                 showResetGatebluDialog();
                 return true;
+            case R.id.action_stop_gateblu:
+                application.stop();
+                return true;
+            case R.id.action_start_gateblu:
+                application.start();
+                return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -113,27 +124,51 @@ public class GatebluActivity extends AppCompatActivity {
 
     // region View Helpers
     private void refreshDeviceGrid() {
-        if(application.isLoading()) {
-            gridView.setVisibility(View.GONE);
-            noDevicesInfoView.setVisibility(View.GONE);
-            spinner.setVisibility(View.VISIBLE);
-            return;
+        switch (application.getState()) {
+            case GatebluApplication.STATES.OFF:
+                showOff();
+                break;
+            case GatebluApplication.STATES.LOADING:
+                showLoading();
+                break;
+            case GatebluApplication.STATES.NO_DEVICES:
+                showNoDevices();
+                break;
+            default:
+                showReady();
+                break;
         }
+        invalidateOptionsMenu();
+    }
 
-        if (application.hasNoDevices()) {
-            setRandomRobotImage();
-            gridView.setVisibility(View.GONE);
-            noDevicesInfoView.setVisibility(View.VISIBLE);
-            spinner.setVisibility(View.GONE);
-            return;
-        }
+    private void showOff() {
+        hideAll();
+        offView.setVisibility(View.VISIBLE);
+    }
 
-        gridView.setVisibility(View.VISIBLE);
-        noDevicesInfoView.setVisibility(View.GONE);
-        spinner.setVisibility(View.GONE);
+    private void showNoDevices() {
+        hideAll();
+        setRandomRobotImage();
+        noDevicesView.setVisibility(View.VISIBLE);
+    }
 
+    private void showLoading() {
+        hideAll();
+        loadingSpinner.setVisibility(View.VISIBLE);
+    }
+
+    private void showReady() {
+        hideAll();
+        devicesGridView.setVisibility(View.VISIBLE);
         deviceGridAdapter = new DeviceGridAdapter(getApplicationContext(), application.getDevices());
-        gridView.setAdapter(deviceGridAdapter);
+        devicesGridView.setAdapter(deviceGridAdapter);
+    }
+
+    private void hideAll() {
+        offView.setVisibility(View.GONE);
+        noDevicesView.setVisibility(View.GONE);
+        devicesGridView.setVisibility(View.GONE);
+        loadingSpinner.setVisibility(View.GONE);
     }
 
     private void setRandomRobotImage() {
@@ -199,7 +234,6 @@ public class GatebluActivity extends AppCompatActivity {
         alertDialog.show();
     }
     // endregion
-
 
     private int getRandomRobotResourceId() {
         return getResources().getIdentifier("robot" + Util.randInt(1, 9), "drawable", getPackageName());
