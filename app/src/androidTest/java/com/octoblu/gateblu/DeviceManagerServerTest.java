@@ -3,6 +3,8 @@ package com.octoblu.gateblu;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.AndroidTestCase;
 
+import com.octoblu.gateblu.models.Device;
+
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONObject;
@@ -11,6 +13,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.net.URI;
+import java.util.List;
 
 @RunWith(AndroidJUnit4.class)
 public class DeviceManagerServerTest extends AndroidTestCase {
@@ -122,8 +125,28 @@ public class DeviceManagerServerTest extends AndroidTestCase {
         }
 
         @Override
+        public void setReady(boolean b) {
+
+        }
+
+        @Override
+        public boolean isReady() {
+            return false;
+        }
+
+        @Override
+        public boolean hasNoDevices() {
+            return false;
+        }
+
+        @Override
         public void removeAll() {
 
+        }
+
+        @Override
+        public List<Device> getDevices() {
+            return null;
         }
 
     }

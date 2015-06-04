@@ -11,28 +11,40 @@
     tools:context=".GatebluActivity">
 
     <LinearLayout
-        android:id="@+id/off_info"
+        android:id="@+id/loading_spinner"
+        android:orientation="vertical"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:orientation="vertical">
+        android:layout_height="fill_parent">
 
-        <TextView
-            android:layout_weight="1"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:gravity="bottom|center"
-            android:text="@string/gateblu_is_off_header"
+            android:layout_weight="1"
+            android:gravity="center">
+
+            <ProgressBar
+                style="?android:attr/progressBarStyleLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/loading_spinner_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/connecting_to_meshblu_header"
             android:textColor="#000"
-
-            android:textSize="24sp" />
+            android:textSize="24sp"/>
         <TextView
-            android:layout_weight="1"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:layout_weight="1"
             android:gravity="top|center"
-            android:text="@string/gateblu_is_off_content"
+            android:text="@string/connecting_to_meshblu_content"
             android:textColor="#000"
-            android:textSize="12sp" />
+            android:textSize="12sp"/>
     </LinearLayout>
 
     <GridView
@@ -73,30 +85,27 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/loading_spinner"
-        android:orientation="vertical"
+        android:id="@+id/off_info"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:layout_height="fill_parent"
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/loading_spinner_text"
+            android:layout_weight="1"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
+            android:layout_height="0dp"
+            android:gravity="bottom|center"
+            android:text="@string/gateblu_is_off_header"
             android:textColor="#000"
-            android:textSize="24sp"/>
+
+            android:textSize="24sp" />
         <TextView
+            android:layout_weight="1"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/connecting_to_meshblu_content"
+            android:layout_height="0dp"
+            android:gravity="top|center"
+            android:text="@string/gateblu_is_off_content"
             android:textColor="#000"
-            android:textSize="12sp"/>
-        <ProgressBar
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical|center_horizontal"
-            android:layout_weight="1" />
+            android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>

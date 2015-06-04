@@ -124,7 +124,8 @@ public class GatebluActivity extends AppCompatActivity {
 
     // region View Helpers
     private void refreshDeviceGrid() {
-        switch (application.getState()) {
+        String state = application.getState();
+        switch (state) {
             case GatebluApplication.STATES.OFF:
                 showOff();
                 break;

@@ -84,13 +84,13 @@ public class GatebluApplication extends Application {
         if(gateblu == null){
             return STATES.OFF;
         }
+        if(!gateblu.isReady()) {
+            return STATES.LOADING;
+        }
         if(gateblu.hasNoDevices()) {
             return STATES.NO_DEVICES;
         }
-        if(gateblu.isReady()) {
-            return STATES.READY;
-        }
-        return STATES.LOADING;
+        return STATES.READY;
     }
 
     public boolean hasNoDevices() {
