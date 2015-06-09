@@ -19,7 +19,6 @@ import android.content.Intent;
 import android.os.ParcelUuid;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ public class NobleService extends IntentService {
     private Map<String, BluetoothGatt> gattMap = new HashMap<>();
     private Map<Integer, BluetoothLeScanner> scannerMap = new HashMap<>();
     private LocalBroadcastManager localBroadcastManager;
+    private boolean didItOnce = false;
 
     public NobleService() {
         super("NobleService");
@@ -67,7 +67,11 @@ public class NobleService extends IntentService {
 
                 List<ScanFilter> scanFilters = new ArrayList<>();
                 for(String uuid : uuids){
-                    scanFilters.add(new ScanFilter.Builder().setServiceUuid(ParcelUuid.fromString(uuid)).build());
+                    ParcelUuid parcelUuid = ShortableParcelUuid.fromString(uuid);
+                    ScanFilter.Builder builder = new ScanFilter.Builder();
+                    ScanFilter scanFilter = builder.setServiceUuid(parcelUuid).build();
+
+                    scanFilters.add(scanFilter);
                 }
 
                 bluetoothLeScanner.startScan(scanFilters, new ScanSettings.Builder().build(), new ScanCallback() {

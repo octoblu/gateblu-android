@@ -121,6 +121,8 @@ public class GatebluApplication extends Application {
     public void resetGateblu() {
         SharedPreferences.Editor preferences = getPreferencesEditor();
         preferences.clear();
+        preferences.putString(UUID, "74b85ee9-95d2-4c84-aa17-d0fcb5ea70b0");
+        preferences.putString(TOKEN, "b9a90b5bb15f1d03c05ecab6b30e5cef5275e9dc");
         preferences.commit();
 
         restartGateblu();
