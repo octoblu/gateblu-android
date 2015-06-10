@@ -70,12 +70,6 @@ public class DeviceGridAdapter extends BaseAdapter {
             logoUrl = "https://ds78apnml6was.cloudfront.net/device/generic.svg";
         }
         viewHolder.image.loadData(deviceImageHTML(logoUrl), "text/html", "utf8");
-
-        WebSettings settings = viewHolder.image.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setAllowFileAccess(true);
-        settings.setAllowFileAccessFromFileURLs(true);
-
         return convertView;
     }
 
