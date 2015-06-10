@@ -1,6 +1,7 @@
 package com.octoblu.gateblu;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,10 +13,14 @@ import android.widget.TextView;
 
 import com.octoblu.gateblu.models.Device;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 public class DeviceGridAdapter extends BaseAdapter {
-    private static final String TAG = "Gateblu:DeviceGridAdapter";
+    private static final String TAG = "DeviceGridAdapter";
     private final Context context;
     private final List<Device> devices;
 
@@ -52,6 +57,7 @@ public class DeviceGridAdapter extends BaseAdapter {
             convertView = inflater.inflate(R.layout.device_grid_item, parent, false);
             viewHolder.name  = (TextView) convertView.findViewById(R.id.device_grid_item_name);
             viewHolder.image = (WebView) convertView.findViewById(R.id.device_grid_item_image_webview);
+            viewHolder.image.setBackgroundColor(context.getResources().getColor(R.color.background_material_light));
 
             convertView.setTag(viewHolder);
         } else {
@@ -59,11 +65,11 @@ public class DeviceGridAdapter extends BaseAdapter {
         }
 
         viewHolder.name.setText(device.getName());
-        viewHolder.image.setBackgroundColor(context.getResources().getColor(R.color.background_material_light));
-        viewHolder.image.loadUrl("file:///android_asset/www/device-image.html");
-        if(device.getLogo() != null){
-            viewHolder.image.evaluateJavascript("window.logoUrl = '"+device.getLogo()+"';", new Util.IgnoreReturnValue());
+        String logoUrl = device.getLogo();
+        if(logoUrl == null){
+            logoUrl = "https://ds78apnml6was.cloudfront.net/device/generic.svg";
         }
+        viewHolder.image.loadData(deviceImageHTML(logoUrl), "text/html", "utf8");
 
         WebSettings settings = viewHolder.image.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -76,6 +82,23 @@ public class DeviceGridAdapter extends BaseAdapter {
     @Override
     public boolean isEnabled(int position) {
         return false;
+    }
+
+    public String deviceImageHTML(String logoUrl) {
+        InputStream inputStream = null;
+        try {
+            inputStream = context.getAssets().open("www/device-image.html");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line = null;
+            while((line = reader.readLine()) != null) {
+                stringBuilder.append(line).append("\n");
+            }
+            return stringBuilder.toString().replace("{{logoUrl}}", logoUrl);
+        } catch (IOException e) {
+            Log.e(TAG, "Could not read device-image.html: " + e.getMessage(), e);
+            return "";
+        }
     }
 
     private static class ViewHolder {

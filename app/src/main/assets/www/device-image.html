@@ -3,20 +3,13 @@
   <style>
     html,body,div { width: 100%; height: 100%; padding: 0; margin: 0;}
     div {
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
     }
   </style>
 </head>
 <body>
-  <div id="image"></div>
-  <script>
-    if(!window.logoUrl){
-      window.logoUrl = "https://ds78apnml6was.cloudfront.net/device/generic.svg";
-    }
-    var image = document.getElementById("image");
-    image.style.backgroundImage = 'url('+window.logoUrl+')';
-  </script>
+  <div id="image" style="background-image: url('{{logoUrl}}')"></div>
 </body>
 </html>
