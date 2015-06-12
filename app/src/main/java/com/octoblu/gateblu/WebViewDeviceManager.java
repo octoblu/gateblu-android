@@ -94,12 +94,18 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
     }
 
     private void removeDevice(String uuid) {
-        WebViewDevice device = devicesMap.remove(uuid);
+        final WebViewDevice device = devicesMap.remove(uuid);
         if(device == null) {
             return;
         }
-        device.stop();
-        emit(CONFIG);
+
+        uiThreadHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                device.stop();
+                emit(CONFIG);
+            }
+        });
     }
 
     @Override
