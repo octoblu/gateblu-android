@@ -42,6 +42,7 @@ public class NobleWebSocketServer extends WebSocketServer {
     public void onOpen(WebSocket conn, ClientHandshake handshake) {
         Log.d(TAG, "something connected!");
         connections.put(conn.hashCode(), conn);
+        sendStateToDevice(conn.hashCode(), "poweredOn");
     }
 
     @Override
@@ -108,7 +109,6 @@ public class NobleWebSocketServer extends WebSocketServer {
     private void discoverServices(int connIndex, JSONObject jsonObject) throws JSONException {
         String peripheralUuid = jsonObject.getString("peripheralUuid");
         List<String> uuids = parseJSONStringArrayOfUuids(jsonObject, "uuids");
-
         for(DiscoverServicesListener listener : discoverServicesListeners){
             listener.onDiscoverServices(connIndex, peripheralUuid, uuids);
         }
@@ -119,19 +119,8 @@ public class NobleWebSocketServer extends WebSocketServer {
         String serviceUuid = jsonObject.getString("serviceUuid");
         List<String> characteristicUuids = parseJSONStringArrayOfUuids(jsonObject, "characteristicUuids");
 
-        for(DiscoverCharacteristicsListener listener : discoverCharacteristicsListeners) {
+        for (DiscoverCharacteristicsListener listener : discoverCharacteristicsListeners) {
             listener.onDiscoverCharacteristics(connIndex, peripheralUuid, serviceUuid, characteristicUuids);
-        }
-    }
-
-    private void write(int connIndex, JSONObject jsonObject) throws JSONException {
-        String peripheralUuid = jsonObject.getString("peripheralUuid");
-        String serviceUuid = jsonObject.getString("serviceUuid");
-        String characteristicUuid = jsonObject.getString("characteristicUuid");
-        String data = jsonObject.getString("data");
-
-        for(WriteListener listener: writeListeners) {
-            listener.write(connIndex, peripheralUuid, serviceUuid, characteristicUuid, data);
         }
     }
 
@@ -195,6 +184,55 @@ public class NobleWebSocketServer extends WebSocketServer {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    public void sendStateToDevice(int connId, String state) {
+        WebSocket conn = connections.get(connId);
+        if(conn == null || !conn.isOpen()) {
+            return;
+        }
+
+        try {
+            JSONObject message = new JSONObject();
+            message.put("type", "stateChange");
+            message.put("state", state);
+            Log.d(TAG, "Sending state: " + message.toString());
+            conn.send(message.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendWrite(int connId, String peripheralUuid, String serviceUuid, String characteristicUuid) {
+        WebSocket conn = connections.get(connId);
+        if(conn == null || !conn.isOpen()) {
+            return;
+        }
+
+        try {
+            JSONObject message = new JSONObject();
+            message.put("type", "write");
+            message.put("peripheralUuid", peripheralUuid);
+            message.put("serviceUuid", serviceUuid);
+            message.put("characteristicUuid", characteristicUuid);
+
+            Log.d(TAG, message.toString());
+            conn.send(message.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void write(int connIndex, JSONObject jsonObject) throws JSONException {
+        String peripheralUuid = jsonObject.getString("peripheralUuid");
+        String serviceUuid = jsonObject.getString("serviceUuid");
+        String characteristicUuid = jsonObject.getString("characteristicUuid");
+        String data = jsonObject.getString("data");
+
+        for(WriteListener listener: writeListeners) {
+            listener.write(connIndex, peripheralUuid, serviceUuid, characteristicUuid, data);
+        }
+        sendWrite(connIndex, peripheralUuid, serviceUuid, characteristicUuid);
     }
 
     public void sendDiscoveredDevice(ScanResult result, int connId) {

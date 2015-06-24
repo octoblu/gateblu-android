@@ -20,6 +20,7 @@
         var connectorUrl = "https://cdn.octoblu.com/js/" + connectorName + "/latest/" + connectorName + ".js";
 
         JavaScript.load(connectorUrl, function(){
+
           window.connector = new Connector(meshbluJSON);
           window.connector.on('config', function(data){
             ConnectorEventListener.on('config', JSON.stringify(data));

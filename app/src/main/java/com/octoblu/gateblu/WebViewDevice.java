@@ -1,11 +1,13 @@
 package com.octoblu.gateblu;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
@@ -83,8 +85,8 @@ public class WebViewDevice extends Emitter {
             @Override
             @JavascriptInterface
             public void on(String event, String jsonData) {
-                Log.i(TAG, "on("+event+"): " + jsonData);
-                if(event.equals("config")) {
+                Log.i(TAG, "on(" + event + "): " + jsonData);
+                if (event.equals("config")) {
                     setConfig(jsonData);
                 }
             }
@@ -93,6 +95,7 @@ public class WebViewDevice extends Emitter {
         webView.loadUrl("file:///android_asset/www/device.html");
         webView.evaluateJavascript("window.connectorName = \"" + connectorName + "\"", new Util.IgnoreReturnValue());
         webView.evaluateJavascript("window.meshbluJSON = {uuid: \"" + uuid + "\", token: \"" + token + "\"};", new Util.IgnoreReturnValue());
+        
         return webView;
     }
 
