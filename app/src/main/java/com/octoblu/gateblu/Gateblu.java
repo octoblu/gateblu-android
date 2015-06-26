@@ -17,6 +17,7 @@ import com.octoblu.gateblu.models.Device;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
 
@@ -98,7 +99,11 @@ public class Gateblu extends Emitter {
         }
 
         if(server != null) {
-            server.stop();
+            try {
+                server.stop(0);
+            } catch (IOException | InterruptedException e) {
+                Log.e(TAG, "Error Stopping Server", e);
+            }
         }
     }
 
