@@ -97,7 +97,7 @@
             android:layout_width="match_parent"
             android:text="@string/claim_gateblu_header" />
         <ImageView
-            android:id="@+id/robot_image"
+            android:id="@+id/claim_robot_image"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
             android:layout_weight="1"

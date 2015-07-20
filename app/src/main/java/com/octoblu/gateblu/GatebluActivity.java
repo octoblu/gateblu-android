@@ -219,7 +219,9 @@ public class GatebluActivity extends AppCompatActivity {
     }
 
     private void setRandomRobotImage() {
+        ImageView claimRobotImageView = (ImageView) findViewById(R.id.claim_robot_image);
         ImageView robotImageView = (ImageView) findViewById(R.id.robot_image);
+        claimRobotImageView.setImageResource(getRandomRobotResourceId());
         robotImageView.setImageResource(getRandomRobotResourceId());
     }
 
