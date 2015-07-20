@@ -10,6 +10,7 @@
     <string name="no_devices_info_header">No Devices!</string>
     <string name="no_devices_info_content">Sign in to Octoblu to add some</string>
     <string name="connecting_to_meshblu_header">Connecting to Meshblu</string>
+    <string name="claim_gateblu_header">Claim Gateblu</string>
     <string name="connecting_to_meshblu_content">Please wait...</string>
     <string name="gateblu_is_off_header">Gateblu is Off</string>
     <string name="gateblu_is_off_content">Use the menu at the top right to turn it back on</string>

@@ -85,6 +85,26 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/claim_gateblu"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/claim_gateblu_button"
+            android:gravity="center"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:text="@string/claim_gateblu_header" />
+        <ImageView
+            android:id="@+id/robot_image"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:src="@drawable/robot1"/>
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/off_info"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"

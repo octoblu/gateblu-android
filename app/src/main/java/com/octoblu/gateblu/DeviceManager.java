@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface DeviceManager {
     String CONFIG = "config";
+    String READY = "ready";
 
     void setReady(boolean b);
     boolean isReady();

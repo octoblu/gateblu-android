@@ -39,6 +39,7 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
     public void setReady(boolean ready) {
         this.ready = ready;
         emit(CONFIG);
+        emit(READY);
     }
 
     @Override

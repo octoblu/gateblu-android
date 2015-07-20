@@ -5,6 +5,8 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -14,6 +16,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.GridView;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -29,6 +32,7 @@ public class GatebluActivity extends AppCompatActivity {
 
     private GridView devicesGridView;
     private LinearLayout offView;
+    private LinearLayout claimGatebluView;
     private LinearLayout noDevicesView;
     private LinearLayout loadingSpinner;
     private GatebluApplication application;
@@ -45,7 +49,16 @@ public class GatebluActivity extends AppCompatActivity {
         offView = (LinearLayout) findViewById(R.id.off_info);
         devicesGridView = (GridView)findViewById(R.id.devices_grid);
         noDevicesView = (LinearLayout) findViewById(R.id.no_devices_info);
+        claimGatebluView = (LinearLayout) findViewById(R.id.claim_gateblu);
         loadingSpinner = (LinearLayout) findViewById(R.id.loading_spinner);
+
+        final Button button = (Button) findViewById(R.id.claim_gateblu_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+                GatebluActivity.this.claimGateblu(v);
+            }
+        });
 
         application = (GatebluApplication) getApplication();
         application.on(GatebluApplication.CONFIG, new Emitter.Listener() {
@@ -58,6 +71,15 @@ public class GatebluActivity extends AppCompatActivity {
                         refreshDeviceGrid();
                     }
                 });
+            }
+        });
+
+        application.on(GatebluApplication.CLAIM_GATEBLU, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                String uuid = (String) args[0];
+                String token = (String) args[1];
+                claimGatebluInOctoblu(uuid, token);
             }
         });
 
@@ -120,9 +142,23 @@ public class GatebluActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
     //endregion
 
     // region View Helpers
+    private void claimGateblu(View view){
+        Log.d(TAG, "I wants to claim gateblu");
+        application.claimGateblu();
+    }
+
+    private void claimGatebluInOctoblu(String uuid, String token){
+        String url = String.format("https://app.octoblu.com/node-wizard/claim/%s/%s", uuid, token);
+        Uri uriUrl = Uri.parse(url);
+        Intent launchBrowser = new Intent(Intent.ACTION_VIEW, uriUrl);
+        startActivity(launchBrowser);
+        application.whoami();
+    }
+
     private void refreshDeviceGrid() {
         String state = application.getState();
         switch (state) {
@@ -132,6 +168,9 @@ public class GatebluActivity extends AppCompatActivity {
             case GatebluApplication.STATES.LOADING:
                 showLoading();
                 break;
+            case GatebluApplication.STATES.CLAIM_GATEBLU:
+                showClaimGateblu();
+                break;
             case GatebluApplication.STATES.NO_DEVICES:
                 showNoDevices();
                 break;
@@ -139,12 +178,19 @@ public class GatebluActivity extends AppCompatActivity {
                 showReady();
                 break;
         }
+        setTitle(application.getName());
         invalidateOptionsMenu();
     }
 
     private void showOff() {
         hideAll();
         offView.setVisibility(View.VISIBLE);
+    }
+
+    private void showClaimGateblu() {
+        hideAll();
+        setRandomRobotImage();
+        claimGatebluView.setVisibility(View.VISIBLE);
     }
 
     private void showNoDevices() {

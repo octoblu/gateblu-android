@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Handler;
@@ -31,6 +32,7 @@ public class GatebluApplication extends Application {
     public static final String UUID = "uuid";
     public static final String TOKEN = "token";
     public static final String CONFIG = "config";
+    public static final String CLAIM_GATEBLU = "claim_gateblu";
     public static final String ACTION_STOP_CONNECTORS = "stopConnectors";
     public static final String RESUME = "resume";
     public static final int PERSISTENT_NOTIFICATION_ID = 1;
@@ -39,6 +41,7 @@ public class GatebluApplication extends Application {
     public final class STATES {
         public static final String OFF = "off";
         public static final String NO_DEVICES = "no-devices";
+        public static final String CLAIM_GATEBLU = "claim-gateblu";
         public static final String LOADING = "loading";
         public static final String READY = "ready";
     }
@@ -46,6 +49,7 @@ public class GatebluApplication extends Application {
     private Emitter emitter = new Emitter();
     private Handler uiThreadHandler;
     private Gateblu gateblu;
+    private Boolean claimingGateblu = false;
 
     @Override
     public void onCreate() {
@@ -86,6 +90,9 @@ public class GatebluApplication extends Application {
         }
         if(!gateblu.isReady()) {
             return STATES.LOADING;
+        }
+        if(!gateblu.hasOwner()) {
+            return STATES.CLAIM_GATEBLU;
         }
         if(gateblu.hasNoDevices()) {
             return STATES.NO_DEVICES;
@@ -155,8 +162,53 @@ public class GatebluApplication extends Application {
                 saveCredentials(SaneJSONObject.fromJSONObject(gatebluJSON));
             }
         });
+        gateblu.on(Gateblu.WHOAMI, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject gatebluJSON = (JSONObject) args[0];
+                saveGatebluDevice(SaneJSONObject.fromJSONObject(gatebluJSON));
+                emitter.emit(CONFIG);
+                if(claimingGateblu){
+                    new android.os.Handler().postDelayed(
+                    new Runnable() {
+                        public void run() {
+                            Log.i(TAG, "Check whoami again...");
+                            gateblu.whoami();
+                        }
+                    }, 10000);
+                }
+            }
+        });
+        gateblu.on(Gateblu.GENERATED_TOKEN, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                JSONObject gatebluJSONObject = (JSONObject) args[0];
+                SaneJSONObject gatebluJSON = SaneJSONObject.fromJSONObject(gatebluJSONObject);
+                if(claimingGateblu){
+                    String uuid = gatebluJSON.getStringOrNull("uuid");
+                    String token = gatebluJSON.getStringOrNull("token");
+                    emitter.emit(CLAIM_GATEBLU, uuid, token);
+                }
+
+            }
+        });
+        gateblu.on(Gateblu.READY, new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                gateblu.whoami();
+            }
+        });
         gateblu.restart();
         emitter.emit(CONFIG);
+    }
+
+    public void claimGateblu(){
+        claimingGateblu = true;
+        gateblu.generateToken(getUuid());
+    }
+
+    public void whoami(){
+        gateblu.whoami();
     }
 
     public void start(){
@@ -191,6 +243,14 @@ public class GatebluApplication extends Application {
                 emitter.emit(CONFIG);
             }
         });
+    }
+
+    private void saveGatebluDevice(SaneJSONObject gatebluJSON) {
+        gateblu.setOwner(gatebluJSON.getStringOrNull("owner"));
+        if(gateblu.hasOwner()){
+            claimingGateblu = false;
+        }
+        gateblu.setName(gatebluJSON.getStringOrNull("name"));
     }
 
     // endregion
@@ -242,6 +302,14 @@ public class GatebluApplication extends Application {
     public String getUuid() {
         SharedPreferences preferences = getSharedPreferences(GatebluApplication.PREFERENCES_FILE_NAME, 0);
         return preferences.getString(GatebluApplication.UUID, null);
+    }
+
+    public String getName() {
+        String gatebluName = gateblu.getName();
+        if(gatebluName == null || gatebluName.isEmpty()){
+            return "Gateblu";
+        }
+        return gatebluName;
     }
 
     // endregion

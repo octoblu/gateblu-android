@@ -21,11 +21,28 @@
         console.log("Loading connector...");
         JavaScript.load(connectorUrl, function(){
           console.log("loaded connector javascript " + connectorUrl);
-          window.connector = new Connector(meshbluJSON);
-          window.connector.on('config', function(data){
-            ConnectorEventListener.on('config', JSON.stringify(data));
-          });
-          window.connector.run();
+          if (typeof Connector !== 'function'){
+            alert(connectorName + " plugin not compatible with mobile");
+            return;
+          }
+          var connector = new Connector(meshbluJSON);
+
+          if(!connector){
+            alert(connectorName + " plugin is invalid");
+            return;
+          }
+
+           if(typeof connector.on === 'function' ){
+             connector.on("config", function(device){
+                ConnectorEventListener.on('config', JSON.stringify(data));
+             });
+           }
+
+           if(typeof connector.run === 'function'){
+              connector.run()
+           }
+
+           window.connector = connector;
         });
     </script>
     <body>
