@@ -22,6 +22,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
 import com.github.nkzawa.emitter.Emitter;
 
 public class GatebluActivity extends AppCompatActivity {

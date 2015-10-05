@@ -18,6 +18,7 @@ import android.webkit.WebView;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
+import com.octoblu.sanejsonobject.SaneJSONObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;

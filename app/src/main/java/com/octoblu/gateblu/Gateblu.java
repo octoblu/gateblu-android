@@ -16,6 +16,8 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
+import com.octoblu.meshblukit.Meshblu;
+import com.octoblu.sanejsonobject.SaneJSONObject;
 
 import org.json.JSONObject;
 
@@ -140,6 +142,29 @@ public class Gateblu extends Emitter {
         String url = "https://meshblu.octoblu.com/devices";
         SaneJSONObject data = new SaneJSONObject();
         data.putOrIgnore("type", "device:gateblu");
+        data.putOrIgnore("platform", "android");
+
+        JsonObjectRequest registerRequest = new JsonObjectRequest(Request.Method.POST, url, data, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject jsonObject) {
+                emit(REGISTER, jsonObject);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError volleyError) {
+
+            }
+        });
+
+        queue.add(registerRequest);
+    }
+
+    private void update() {
+        RequestQueue queue = Volley.newRequestQueue(context);
+        String url = "https://meshblu.octoblu.com/devices";
+        SaneJSONObject data = new SaneJSONObject();
+        data.putOrIgnore("type", "device:gateblu");
+        data.putOrIgnore("platform", "android");
 
         JsonObjectRequest registerRequest = new JsonObjectRequest(Request.Method.POST, url, data, new Response.Listener<JSONObject>() {
             @Override

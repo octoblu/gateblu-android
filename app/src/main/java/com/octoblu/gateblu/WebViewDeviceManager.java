@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.MissingResourceException;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.octoblu.sanejsonobject.SaneJSONObject;
+
 public class WebViewDeviceManager extends Emitter implements DeviceManager {
 
     public static final String TAG = "WebViewDeviceManager";
