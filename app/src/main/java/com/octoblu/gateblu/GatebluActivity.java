@@ -216,6 +216,7 @@ public class GatebluActivity extends AppCompatActivity {
         offView.setVisibility(View.GONE);
         noDevicesView.setVisibility(View.GONE);
         devicesGridView.setVisibility(View.GONE);
+        claimGatebluView.setVisibility(View.GONE);
         loadingSpinner.setVisibility(View.GONE);
     }
 

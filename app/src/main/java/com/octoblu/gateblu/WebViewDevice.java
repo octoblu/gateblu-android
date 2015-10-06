@@ -1,13 +1,10 @@
 package com.octoblu.gateblu;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
@@ -18,50 +15,38 @@ import org.json.JSONObject;
 public class WebViewDevice extends Emitter {
     private static final String TAG = "WebViewDevice";
     public static final String CONFIG = "config";
-    private final String connectorName, uuid, token;
+    public static final String SEND_LOG = "send_log";
     private final Context context;
     private WebView webView = null;
-    private String name = null;
-    private String logo = null;
+    private Device device;
 
-    public WebViewDevice(String connectorName, String uuid, String token, Context context) {
-        this.connectorName = connectorName;
-        this.uuid = uuid;
-        this.token = token;
+    public WebViewDevice(SaneJSONObject deviceJSONObject, Context context) {
+        this.device = new Device(deviceJSONObject);
         this.context = context;
         this.webView = null;
     }
 
     public String getUuid() {
-        return uuid;
+        return this.device.getUuid();
     }
 
-    public Device toDevice() {
-        return new Device(name, logo);
+    public Device toDevice(){
+        return this.device;
     }
 
     private void setConfig(String jsonData) {
         SaneJSONObject json = SaneJSONObject.fromString(jsonData);
-        this.name = json.getStringOrNull("name");
-        this.logo = json.getStringOrNull("logo");
-        if(this.logo == null){
-            this.logo = parseLogoFromType(json.getStringOrNull("type"));
-        }
+        this.device.fromJSONObject(json);
         emit(CONFIG);
     }
 
-    private String parseLogoFromType(String type) {
-        if(type == null || type.split(":").length < 2){
-            return "https://ds78apnml6was.cloudfront.net/device/generic.svg";
-        }
-        String category = type.split(":")[0];
-        String name = type.split(":")[1];
-
-        return "https://ds78apnml6was.cloudfront.net/"+category+"/"+name+".svg";
+    private void sendLogMessage(String jsonData) {
+        SaneJSONObject json = SaneJSONObject.fromString(jsonData);
+        emit(SEND_LOG, json);
     }
 
     public void start() {
-        Log.i(TAG, "start: " + uuid);
+        Log.i(TAG, "start: " + this.device.getUuid());
         stop();
         this.webView = generateWebView();
     }
@@ -90,23 +75,21 @@ public class WebViewDevice extends Emitter {
                 if (event.equals("config")) {
                     setConfig(jsonData);
                 }
+                if (event.equals("send_log")) {
+                    sendLogMessage(jsonData);
+                }
             }
         }, "ConnectorEventListener");
         webView.clearCache(true);
         webView.loadUrl("file:///android_asset/www/device.html");
-        webView.evaluateJavascript("window.connectorName = \"" + connectorName + "\"", new Util.IgnoreReturnValue());
-        webView.evaluateJavascript("window.meshbluJSON = {uuid: \"" + uuid + "\", token: \"" + token + "\"};", new Util.IgnoreReturnValue());
+        webView.evaluateJavascript("window.connectorName = \"" + this.device.getConnector() + "\"", new Util.IgnoreReturnValue());
+        webView.evaluateJavascript("window.meshbluJSON = {uuid: \"" + this.device.getUuid() + "\", token: \"" + this.device.getToken() + "\"};", new Util.IgnoreReturnValue());
         
         return webView;
     }
 
     public static WebViewDevice fromJSONObject(JSONObject data, Context context) {
-        SaneJSONObject saneData = SaneJSONObject.fromJSONObject(data);
-        String connectorName = saneData.getStringOrThrow("connector");
-        String uuid = saneData.getStringOrThrow("uuid");
-        String token = saneData.getStringOrThrow("token");
-
-        return new WebViewDevice(connectorName, uuid, token, context);
+        return new WebViewDevice(SaneJSONObject.fromJSONObject(data), context);
     }
 
     public interface ConnectorEventEmitter {

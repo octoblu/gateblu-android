@@ -6,25 +6,20 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.octoblu.gateblu.models.Device;
 import com.octoblu.sanejsonobject.SaneJSONObject;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class GatebluApplication extends Application {
@@ -191,12 +186,6 @@ public class GatebluApplication extends Application {
                     emitter.emit(CLAIM_GATEBLU, uuid, token);
                 }
 
-            }
-        });
-        gateblu.on(Gateblu.READY, new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                gateblu.whoami();
             }
         });
         gateblu.restart();

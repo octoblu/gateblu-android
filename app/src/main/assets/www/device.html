@@ -19,22 +19,41 @@
 
         var connectorUrl = "https://cdn.octoblu.com/js/" + connectorName + "/latest/" + connectorName + ".js";
         console.log("Loading connector...");
+
+        window.sendLogMessage = function(workflow, state, message){
+            ConnectorEventListener.on('send_log', JSON.stringify({ workflow: workflow, state: state, uuid: meshbluJSON.uuid, message: message }));
+        };
+        window.onerror = function (errorMsg, url, lineNumber) {
+          var values = Object.keys(arguments).map(function(key){return a[key]})
+          var stringifiedValues = JSON.stringify(values);
+          console.log("Error occured: " + stringifiedValues); //or any message
+          sendLogMessage('running-device', 'error', stringifiedValues);
+          return false;
+        };
+
         JavaScript.load(connectorUrl, function(){
+          var message = "", running = false;
           console.log("loaded connector javascript " + connectorUrl);
           if (typeof Connector !== 'function'){
-            alert(connectorName + " plugin not compatible with mobile");
+            message = "Plugin not compatible with mobile";
+            sendLogMessage('start-device', 'error', message);
             return;
           }
           var connector = new Connector(meshbluJSON);
 
           if(!connector){
-            alert(connectorName + " plugin is invalid");
+            message = "Plugin is invalid";
+            sendLogMessage('start-device', 'error', message);
             return;
           }
 
            if(typeof connector.on === 'function' ){
              connector.on("config", function(device){
-                ConnectorEventListener.on('config', JSON.stringify(data));
+                if(!running){
+                    sendLogMessage('start-device', 'end', '');
+                }
+                running = true;
+                ConnectorEventListener.on('config', JSON.stringify(device));
              });
            }
 

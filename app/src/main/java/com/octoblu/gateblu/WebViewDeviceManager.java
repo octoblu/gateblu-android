@@ -5,22 +5,22 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.github.nkzawa.emitter.Emitter;
-import com.octoblu.gateblu.models.Device;
 
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.octoblu.gateblu.models.Device;
 import com.octoblu.sanejsonobject.SaneJSONObject;
 
 public class WebViewDeviceManager extends Emitter implements DeviceManager {
 
     public static final String TAG = "WebViewDeviceManager";
+    public static final String SEND_LOG = "send_log";
     private final Context context;
     private final ConcurrentHashMap<String, WebViewDevice> devicesMap;
     private final Handler uiThreadHandler;
@@ -56,6 +56,26 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
     }
 
     @Override
+    public Device getDevice(String uuid) {
+        if(uuid == null){
+            return null;
+        }
+
+        List<Device> devices = new ArrayList<>(devicesMap.size());
+
+        Collection<WebViewDevice> webViewDevices = devicesMap.values();
+        for(WebViewDevice webViewDevice : webViewDevices) {
+            if(uuid == null){
+                continue;
+            }
+            if(uuid.equals(webViewDevice.getUuid())){
+                return webViewDevice.toDevice();
+            }
+        }
+        return null;
+    }
+
+    @Override
     public boolean hasNoDevices() {
         return devicesMap.isEmpty();
     }
@@ -76,6 +96,13 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
             @Override
             public void call(Object... args) {
                 emit(CONFIG);
+            }
+        });
+        device.on(WebViewDevice.SEND_LOG, new Listener() {
+            @Override
+            public void call(Object... args) {
+                SaneJSONObject log = (SaneJSONObject) args[0];
+                emit(SEND_LOG, log);
             }
         });
         devicesMap.put(device.getUuid(), device);
@@ -126,6 +153,12 @@ public class WebViewDeviceManager extends Emitter implements DeviceManager {
             @Override
             public void run() {
                 devicesMap.get(uuid).start();
+                SaneJSONObject log = new SaneJSONObject();
+                log.putOrIgnore("workflow", "start-device");
+                log.putOrIgnore("state", "begin");
+                log.putOrIgnore("uuid", uuid);
+                log.putOrIgnore("message", "");
+                emit(SEND_LOG, log);
                 emit(CONFIG);
             }
         });

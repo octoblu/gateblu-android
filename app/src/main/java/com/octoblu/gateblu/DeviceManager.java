@@ -16,6 +16,7 @@ public interface DeviceManager {
     void removeAll();
 
     List<Device> getDevices();
+    Device getDevice(String uuid);
 
     void addDevice(JSONObject data);
     void removeDevice(JSONObject data);
